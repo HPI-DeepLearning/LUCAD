@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-import helper, argparse, os, csv, math
+import helper, argparse, os
 from PIL import Image, ImageTk
 import Tkinter as tk
 import numpy as np

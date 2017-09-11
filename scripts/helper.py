@@ -1,7 +1,7 @@
 import SimpleITK as sitk
 import numpy as np
 from PIL import Image
-import argparse, cv2, os, csv
+import argparse, cv2, os, csv, sys, time
 
 
 def load_itk(filename):
@@ -92,6 +92,55 @@ def rescale_patient_images(scan, spacing, target_voxel_mm, is_mask_image=False, 
         print("Shape after: ", res.shape)
 
     return res
+
+class SimpleLoadingBar(object):
+    def __init__(self, name, max_value, width = 40, stream = sys.stderr):
+        self.__width = width
+        self.__step = 0
+        self.__prev_step = -1
+        self.__max = max_value
+        self.__stream = stream
+        self.__name = name
+
+        self.__start = time.time()
+        self.__last_update = time.time()
+
+        self.write_bar(0)
+
+    def format_time(self, n):
+        return "%02d:%02d:%02d" % ((n / 60 / 60), (n / 60) % 60, n % 60)
+
+    def write_bar(self, current_iteration, force_redraw = False):
+        seconds = int(time.time() - self.__start)
+        time_since_last_update = int(time.time() - self.__last_update)
+        if self.__step <= self.__prev_step and time_since_last_update < 5:
+            return
+
+        if current_iteration == 0:
+            time_string = "--:--:--"
+        else:
+            total = seconds * self.__max / current_iteration
+            time_string = self.format_time(total)
+
+        bar = "[%s%s]" % ("-" * self.__step, " " * (self.__width - self.__step))
+        line = "%s %s (%s / %s)" % (bar, self.__name, self.format_time(seconds), time_string)
+
+        self.__stream.write(line)
+        self.__stream.flush()
+        self.__stream.write("\b" * (len(line)))
+
+        self.__prev_step = self.__step
+        self.__last_update = time.time()
+
+    def update_progress(self, current_iteration):
+        if current_iteration > self.__max:
+            self.__max = current_iteration
+        while current_iteration > (self.__max * self.__step / self.__width):
+            self.__step += 1
+        self.write_bar(current_iteration)
+
+    def finish(self):
+        self.__stream.write("\n")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
