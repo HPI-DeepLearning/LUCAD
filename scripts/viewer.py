@@ -1,7 +1,9 @@
 import helper, argparse, os
 from PIL import Image, ImageTk
+from arrayviewer import Array3DViewer
 import Tkinter as tk
 import numpy as np
+
 
 class Viewer(tk.Frame):
     def __init__(self, master = None, root = ""):

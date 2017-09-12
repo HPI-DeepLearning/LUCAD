@@ -4,6 +4,9 @@ from PIL import Image
 import argparse, cv2, os, csv, sys, time
 
 
+DTYPE = 'u1'
+
+
 def load_itk(filename):
     # Reads the image using SimpleITK
     itkimage = sitk.ReadImage(filename)
