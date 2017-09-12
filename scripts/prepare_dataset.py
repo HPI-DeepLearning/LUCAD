@@ -8,6 +8,17 @@ def show_preview(array, origin, spacing):
     viewer.master.title('Preview')
     viewer.mainloop()
 
+def sanitize_coords(coords, min_val):
+    result = [int(round(j)) for j in (coords)]
+    result = [max(j, min_val) for j in result]
+    return result
+
+def assert_debug(boolean, info):
+    if boolean:
+        return
+    print info
+    assert False
+
 def export(root, output, subset, current_file, candidates, target_voxel_mm, cubesize, progress = 0, loading_bar = None, preview = False):
     scan, origin, spacing = helper.load_itk(os.path.join(root, subset, current_file + ".mhd"))
 
@@ -38,14 +49,16 @@ def export(root, output, subset, current_file, candidates, target_voxel_mm, cube
     for c in candidates:
 
         candidate_coords = np.asarray((float(c['coordZ']), float(c['coordY']), float(c['coordX'])))
-        voxel_coords = helper.world_to_voxel(candidate_coords, origin, spacing)
+        voxel_coords = np.round(helper.world_to_voxel(candidate_coords, origin, spacing))
 
-        z0, y0, x0 = [max(int(round(j)), 0) for j in (voxel_coords - half_cubesize_arr)]
-        z1, y1, x1 = [max(int(round(j)), 0) for j in (voxel_coords + half_cubesize_arr)]
+        z0, y0, x0 = sanitize_coords(voxel_coords - half_cubesize_arr, 0)
+        z1, y1, x1 = sanitize_coords(voxel_coords + half_cubesize_arr, 0)
 
         candidate_roi = scan[z0:z1, y0:y1, x0:x1]
 
-        assert min(candidate_roi.shape) > 0
+        coordinates = [z0, y0, x0, z1, y1, x1]
+        assert_debug(min(candidate_roi.shape) > 0, coordinates)
+        assert_debug(max(candidate_roi.shape) <= cubesize, coordinates)
 
         padding = [(int(math.ceil(p / 2.0)), int(p / 2.0)) for p in (cubesize_arr - candidate_roi.shape)]
         padded = np.pad(candidate_roi, padding, 'constant', constant_values = (0,))
