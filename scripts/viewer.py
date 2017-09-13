@@ -12,11 +12,11 @@ class Viewer(tk.Frame):
         self.annotations = helper.load_annotations(self.root)
         self.candidates = helper.load_candidates(self.root)
         self.grid(padx = 2, pady = 2)
-        self.createWidgets()
+        self.create_widgets()
         self.bind_all("<Right>", self.on_right_pressed)
         self.bind_all("<Left>", self.on_left_pressed)
 
-    def createWidgets(self):
+    def create_widgets(self):
         self.create_subset_selection()
         self.create_file_selection()
         self.create_options()
@@ -81,7 +81,6 @@ class Viewer(tk.Frame):
 
     def create_canvas(self):
         self.canvas_frame = self.make_frame(row = 3, column = 0, columnspan = 2)
-        reject = self.register(lambda: False)
         self.canvas_label = tk.Text(self.canvas_frame, width = 68, height = 1, borderwidth = 0)
         self.canvas_label.pack(side = tk.TOP, padx = 5)
         self.canvas_label.configure(state = "disabled")
@@ -136,7 +135,7 @@ class Viewer(tk.Frame):
             return
 
         self.update_image(self.coordinate_var.get())
-        self.coordinate_label.configure(text = "Z: %.2f" % self.get_currrent_z())
+        self.coordinate_label.configure(text = "Z: %.2f" % self.get_current_z())
 
         self.update_annotation()
 
@@ -146,7 +145,7 @@ class Viewer(tk.Frame):
         self.canvas_label.insert(tk.END, self.files[self.file_var.get()])
         self.canvas_label.configure(state = "disabled")
 
-    def get_currrent_z(self):
+    def get_current_z(self):
         return self.origin[0] + self.coordinate_var.get() * self.spacing[0]
 
     def world_to_voxel(self, coords, origin = None, spacing = None):
@@ -169,7 +168,7 @@ class Viewer(tk.Frame):
         self.texts_on_canvas = []
 
     def make_bbox(self, coords, radius):
-        return (coords[1] - radius, coords[0] - radius, coords[1] + radius, coords[0] + radius)
+        return coords[1] - radius, coords[0] - radius, coords[1] + radius, coords[0] + radius
 
     def make_annotations(self, dataset, diameter, color, pos, anchor = 0):
         z_coords = []
@@ -218,7 +217,7 @@ class Viewer(tk.Frame):
         self.img = Image.fromarray(data)
         self.photo = ImageTk.PhotoImage(image = self.img)
 
-        if self.image_on_canvas == None:
+        if self.image_on_canvas is None:
             self.image_on_canvas = self.canvas.create_image(0, 0, image = self.photo, anchor = tk.NW)
         else:
             self.canvas.itemconfig(self.image_on_canvas, image = self.photo)
@@ -234,14 +233,16 @@ class Viewer(tk.Frame):
         self.file_var.set(self.files.index(uid + ".mhd"))
         self.on_file_changed()
 
+
 def main(args):
     viewer = Viewer(None, args.root)
-    if args.subset != None:
+    if args.subset is not None:
         viewer.select_subset(args.subset)
-    if args.seriesuid != None:
+    if args.seriesuid is not None:
         viewer.select_files(args.seriesuid)
     viewer.master.title('Viewer')
     viewer.mainloop()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

@@ -22,6 +22,7 @@ def load_itk(filename):
 
     return ct_scan, origin, spacing
 
+
 def load_csv(root, filename):
     annotations = os.path.join(root, "CSVFILES", filename)
 
@@ -34,17 +35,22 @@ def load_csv(root, filename):
             data[row['seriesuid']].append(row)
     return data
 
+
 def load_annotations(root):
     return load_csv(root, "annotations.csv")
+
 
 def load_candidates(root):
     return load_csv(root, "candidates.csv")
 
+
 def world_to_voxel(coords, origin, spacing):
     return np.absolute(coords - origin) / spacing
 
+
 def voxel_to_world(coords, origin, spacing):
     return spacing * coords + origin
+
 
 def normalize_to_grayscale(arr, factor = 255):
     maxHU = 400.
@@ -53,6 +59,7 @@ def normalize_to_grayscale(arr, factor = 255):
     data[data > 1] = 1.
     data[data < 0] = 0.
     return data * factor
+
 
 def rescale_patient_images(scan, spacing, target_voxel_mm, is_mask_image=False, verbose=False):
     if verbose:
@@ -96,6 +103,7 @@ def rescale_patient_images(scan, spacing, target_voxel_mm, is_mask_image=False, 
 
     return res
 
+
 class SimpleLoadingBar(object):
     def __init__(self, name, max_value, width = 40, stream = sys.stderr):
         self.__width = width
@@ -108,42 +116,52 @@ class SimpleLoadingBar(object):
         self.__start = time.time()
         self.__last_update = time.time()
 
+        self.__current_iteration = 0
+
         self.write_bar(0)
 
     def format_time(self, n):
         return "%02d:%02d:%02d" % ((n / 60 / 60), (n / 60) % 60, n % 60)
 
-    def write_bar(self, current_iteration, force_redraw = False):
+    def write_bar(self, force_redraw = False):
         seconds = int(time.time() - self.__start)
         time_since_last_update = int(time.time() - self.__last_update)
         if self.__step <= self.__prev_step and time_since_last_update < 5:
             return
 
-        if current_iteration == 0:
+        if self.__current_iteration == 0:
             time_string = "--:--:--"
         else:
-            total = seconds * self.__max / current_iteration
+            total = seconds * self.__max / self.__current_iteration
             time_string = self.format_time(total)
 
         bar = "[%s%s]" % ("-" * self.__step, " " * (self.__width - self.__step))
         line = "%s %s (%s / %s)" % (bar, self.__name, self.format_time(seconds), time_string)
 
-        self.__stream.write(line)
+        self.__stream.write("\r" + line)
         self.__stream.flush()
-        self.__stream.write("\b" * (len(line)))
 
         self.__prev_step = self.__step
         self.__last_update = time.time()
 
+    def advance_progress(self, iterations_passed):
+        self.__current_iteration += iterations_passed
+        self.__update_progress()
+
     def update_progress(self, current_iteration):
-        if current_iteration > self.__max:
-            self.__max = current_iteration
-        while current_iteration > (self.__max * self.__step / self.__width):
+        self.__current_iteration = current_iteration
+        self.__update_progress()
+
+    def __update_progress(self):
+        if self.__current_iteration > self.__max:
+            self.__max = self.__current_iteration
+        while self.__current_iteration > (self.__max * self.__step / self.__width):
             self.__step += 1
-        self.write_bar(current_iteration)
+        self.write_bar()
 
     def finish(self):
         self.__stream.write("\n")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

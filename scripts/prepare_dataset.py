@@ -1,102 +1,206 @@
-import helper, argparse, os, cv2, math, arrayviewer
+import helper, argparse, os, math, arrayviewer
 import numpy as np
 
 
-def show_preview(array, origin, spacing):
+def show_preview(array, origin, spacing, name = "Preview"):
     viewer = arrayviewer.Array3DViewer(None)
     viewer.set_array(array, origin, spacing)
-    viewer.master.title('Preview')
+    viewer.master.title(name)
     viewer.mainloop()
 
-def sanitize_coords(coords, min_val):
-    result = [int(round(j)) for j in (coords)]
+
+def sanitize_coords(coordinates, min_val):
+    result = [int(round(j)) for j in coordinates]
     result = [max(j, min_val) for j in result]
     return result
 
-def assert_debug(boolean, info):
+
+def assert_debug(boolean, callback, data):
     if boolean:
         return
-    print info
+    callback(data)
     assert False
+
+
+class CandidateStorage(object):
+    def __init__(self, root, n, cube_size, file_prefix = ""):
+        self.root = root
+        self.n = n
+        self.index = 0
+        if file_prefix != "":
+            file_prefix = file_prefix + "_"
+
+        if not os.path.exists(self.root):
+            os.makedirs(self.root)
+
+        data_filename = os.path.join(self.root, "%sdata.npy" % file_prefix)
+        data_shape = (n, cube_size, cube_size, cube_size)
+        labels_filename = os.path.join(self.root, "%slabels.npy" % file_prefix)
+
+        self.data = np.memmap(data_filename, dtype = helper.DTYPE, mode = "w+", shape = data_shape)
+        self.labels = np.memmap(labels_filename, dtype = helper.DTYPE, mode = "w+", shape = n)
+
+    def store_candidate(self, data, label):
+        self.data[self.index, :, :, :] = data
+        self.labels[self.index] = label
+        self.index += 1
+
+
+class CandidateGenerator(object):
+    def __init__(self, flip = ("",), resize = (1.0,), rotate = "none", augment_class = "1"):
+        self.flip = flip
+        self.resize = resize
+        self.rotate = rotate
+
+        self.scans = []
+        self.spacings = []
+
+        self.augment_class = augment_class
+
+    def get_augment_factor(self):
+        rotation_variants = {"none": 1, "dice": 24}
+        return len(self.flip) * len(self.resize) * rotation_variants[self.rotate]
+
+    def set_scan(self, scan, origin, spacing, voxel_size, name = ""):
+        self.name = name
+        self.original_scan = scan
+        self.origin = origin
+        self.original_spacing = spacing
+
+        self.create_resized_scans(voxel_size)
+
+    def create_resized_scans(self, base_voxel_size):
+        self.scans = []
+        self.spacings = []
+        for size in self.resize:
+            voxel_size = size * base_voxel_size
+            rescaled = helper.rescale_patient_images(self.original_scan, self.original_spacing, voxel_size)
+            self.spacings.append(np.asarray([voxel_size, voxel_size, voxel_size]))
+            self.scans.append(helper.normalize_to_grayscale(rescaled).astype(helper.DTYPE))
+
+    def set_candidate_storage(self, storage):
+        self.storage = storage
+
+    def augment_with_rotation(self, data, label, preview):
+        # First turn to each side of a 'dice', 0 is original
+        #   4
+        # 3 0 1 2
+        #   5
+        for side in range(0, 6):
+            rotated = data
+            if 0 < side < 4:
+                rotated = np.rot90(data, side, axes = (0, 1))
+            if side == 4:
+                rotated = np.rot90(data, 1, axes = (0, 2))
+            if side == 5:
+                rotated = np.rot90(data, 1, axes = (2, 0))
+            for k in range(0, 4):
+                # now rotate the top face: v > ^ <
+                final = np.rot90(rotated, k, axes = (1, 2))
+                self.store_candidate(final, label, preview)
+
+    def generate_augmented_candidates(self, c, cube_size, cube_size_arr, preview):
+        for resize_factor in self.resize:
+            data, label = self.generate_single_candidate(c, cube_size, cube_size_arr, resize_factor)
+            for flip_axis in self.flip:
+                if flip_axis == "":
+                    self.augment_with_rotation(data, label, preview)
+                elif flip_axis == "x":
+                    self.augment_with_rotation(np.flip(data, 2), label, preview)
+                elif flip_axis == "y":
+                    self.augment_with_rotation(np.flip(data, 1), label, preview)
+        return self.get_augment_factor()
+
+    def store_candidate(self, data, label, preview):
+        if preview:
+            show_preview(data, np.asarray((0., 0., 0.)), np.asarray((1., 1., 1.)))
+        self.storage.store_candidate(data, label)
+
+    def generate_candidate(self, c, cube_size, cube_size_arr, preview):
+        data, label = self.generate_single_candidate(c, cube_size, cube_size_arr)
+        self.store_candidate(data, label, preview)
+        return 1
+
+    def generate_single_candidate(self, c, cube_size, cube_size_arr, resize_factor = 1.0):
+        index = -1
+        for i, f in enumerate(self.resize):
+            if abs(f - resize_factor) < 0.01:
+                index = i
+
+        candidate_coords = np.asarray((float(c['coordZ']), float(c['coordY']), float(c['coordX'])))
+        voxel_coords = np.round(helper.world_to_voxel(candidate_coords, self.origin, self.spacings[index]))
+
+        z0, y0, x0 = sanitize_coords(voxel_coords - (cube_size_arr / 2), 0)
+        z1, y1, x1 = sanitize_coords(voxel_coords + (cube_size_arr / 2), 0)
+
+        candidate_roi = self.scans[index][z0:z1, y0:y1, x0:x1]
+
+        info = [index, z0, y0, x0, z1, y1, x1]
+        assert_debug(min(candidate_roi.shape) > 0, self.show_debug_info, info)
+        assert_debug(max(candidate_roi.shape) <= cube_size, self.show_debug_info, info)
+
+        padding = [(int(math.ceil(p / 2.0)), int(p / 2.0)) for p in (cube_size_arr - candidate_roi.shape)]
+        padded = np.pad(candidate_roi, padding, 'constant', constant_values = (0,))
+
+        return padded, int(c['class'])
+
+    def show_debug_info(self, info):
+        print self.name
+        print info
+        show_preview(self.scans[info[0]], self.origin, self.spacings[info[0]], "Error on this scan!")
+
+    def generate(self, candidates, cube_size, loading_bar = None, preview = False):
+        cube_size_arr = np.asarray((cube_size, cube_size, cube_size))
+
+        for c in candidates:
+            if c['class'] == self.augment_class:
+                candidates_generated = self.generate_augmented_candidates(c, cube_size, cube_size_arr, preview)
+            else:
+                candidates_generated = self.generate_candidate(c, cube_size, cube_size_arr, preview)
+
+            if loading_bar is not None:
+                loading_bar.advance_progress(candidates_generated)
+
 
 def export_subset(args, subset, candidates):
     files = os.listdir(os.path.join(args.root, subset))
-    files = [i.replace(".mhd","") for i in filter(lambda x: ".mhd" in x, files)]
+    files = [i.replace(".mhd", "") for i in filter(lambda x: ".mhd" in x, files)]
     files.sort()
 
-    total = sum([len(candidates[f]) for f in files])
-    print "Exporting %s with %d candidates..." % (subset, total)
-    lb = helper.SimpleLoadingBar("Exporting", total)
+    generator = CandidateGenerator(
+        flip = ("", "x", "y"),
+        resize = (0.8, 0.866, 0.933, 0.966, 1.0, 1.05, 1.1, 1.15),
+        rotate = "dice"
+    )
+    augment_factor = generator.get_augment_factor()
 
-    for f in files:
+    total = sum([sum(augment_factor if i['class'] == '1' else 1 for i in candidates[f]) for f in files])
+    original = sum([len(candidates[f]) for f in files])
 
-        scan, origin, spacing = helper.load_itk(os.path.join(root, subset, current_file + ".mhd"))
+    print "Reserving storage..."
+    storage = CandidateStorage(os.path.join(args.output, subset), total, args.cubesize)
+    generator.set_candidate_storage(storage)
 
-        scan = helper.rescale_patient_images(scan, spacing, target_voxel_mm)
-        spacing = np.asarray([target_voxel_mm, target_voxel_mm, target_voxel_mm])
-        scan = helper.normalize_to_grayscale(scan).astype(helper.DTYPE)
+    print "Exporting %s with %d (%.2f%% original) candidates..." % (subset, total, float(original) / total * 100)
+    loading_bar = helper.SimpleLoadingBar("Exporting", total)
 
-        total_candidates = len(candidates)
+    for current_file in files:
+        scan, origin, spacing = helper.load_itk(os.path.join(args.root, subset, current_file + ".mhd"))
 
-        data = np.zeros((total_candidates, cubesize, cubesize, cubesize), dtype = helper.DTYPE)
-        labels = np.zeros((total_candidates), dtype = helper.DTYPE)
+        generator.set_scan(scan, origin, spacing, args.voxelsize, current_file)
 
-        data_filename = os.path.join(subset, "%s_data.npy" % current_file)
-        labels_filename = os.path.join(subset, "%s_labels.npy" % current_file)
+        generator.generate(candidates[current_file], args.cubesize, loading_bar, args.preview)
 
-        cubesize_arr = np.asarray((cubesize, cubesize, cubesize))
-        half_cubesize_arr = cubesize_arr / 2
-
-        directory = os.path.join(output, subset)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-
-        candidate_num = 0
-
-        with open(os.path.join(output, subset + ".txt"), "a") as handle:
-            handle.write(" ".join([data_filename, labels_filename]) + "\n")
-
-        for c in candidates:
-
-            candidate_coords = np.asarray((float(c['coordZ']), float(c['coordY']), float(c['coordX'])))
-            voxel_coords = np.round(helper.world_to_voxel(candidate_coords, origin, spacing))
-
-            z0, y0, x0 = sanitize_coords(voxel_coords - half_cubesize_arr, 0)
-            z1, y1, x1 = sanitize_coords(voxel_coords + half_cubesize_arr, 0)
-
-            candidate_roi = scan[z0:z1, y0:y1, x0:x1]
-
-            coordinates = [z0, y0, x0, z1, y1, x1]
-            assert_debug(min(candidate_roi.shape) > 0, coordinates)
-            assert_debug(max(candidate_roi.shape) <= cubesize, coordinates)
-
-            padding = [(int(math.ceil(p / 2.0)), int(p / 2.0)) for p in (cubesize_arr - candidate_roi.shape)]
-            padded = np.pad(candidate_roi, padding, 'constant', constant_values = (0,))
-
-            if preview: show_preview(padded, np.asarray((0., 0., 0.)), np.asarray((1., 1., 1.)))
-
-            data[candidate_num,:,:,:] = padded
-            labels[candidate_num] = int(c['class'])
-
-            candidate_num += 1
-            if loading_bar:
-                loading_bar.update_progress(progress + candidate_num)
-
-        np.save(os.path.join(output, data_filename), data)
-        np.save(os.path.join(output, labels_filename), labels)
 
 def main(args):
     subsets = ["subset" + str(i) for i in args.subsets]
 
     candidates = helper.load_candidates(args.root)
 
-    for subset in subsets:
-        with open(os.path.join(args.output, subset + ".txt"), "w") as handle:
-            handle.write("")
-
     # todo: augmentation, flip (3D?), resize ratio 0.8 - 1.15, rotate 90 degree
     for subset in subsets:
         export_subset(args, subset, candidates)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "prepare dataset for FPRED")

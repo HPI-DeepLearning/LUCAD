@@ -12,11 +12,11 @@ class Array3DViewer(tk.Frame):
         self.stretch = stretch
 
         self.grid(padx = 2, pady = 2)
-        self.createWidgets()
+        self.create_widgets()
         self.bind_all("<Right>", self.on_right_pressed)
         self.bind_all("<Left>", self.on_left_pressed)
 
-    def createWidgets(self):
+    def create_widgets(self):
         self.create_coordinates()
         self.create_mouse_field()
         self.create_canvas()
@@ -60,7 +60,7 @@ class Array3DViewer(tk.Frame):
 
     def on_mouse_movement(self, event):
         # axis order is z, y, x, and data x and y axis are swapped
-        _, y, x = helper.voxel_to_world((0, event.y, event.x), self.origin, self.spacing)
+        _, y, x = helper.voxel_to_world((0, event.y * self.stretch_factor[1], event.x * self.stretch_factor[0]), self.origin, self.spacing)
         self.mouse_label.configure(text = "X: %.2f, Y: %.2f" % (x, y))
 
     def on_mouse_leave(self, event):
@@ -86,19 +86,22 @@ class Array3DViewer(tk.Frame):
     def update_image(self, layer):
         self.layer = layer
 
-        data = self.array[layer,:,:]
+        data = self.array[layer, :, :]
 
         if self.stretch:
-            self.img = Image.fromarray(data).resize((self.canvas_size, self.canvas_size),Image.ANTIALIAS)
+            self.img = Image.fromarray(data).resize((self.canvas_size, self.canvas_size), Image.ANTIALIAS)
+            self.stretch_factor = float(data.shape[0]) / self.canvas_size, float(data.shape[1]) / self.canvas_size
         else:
             self.img = Image.fromarray(data)
+            self.stretch_factor = 1.0, 1.0
 
         self.photo = ImageTk.PhotoImage(image = self.img)
 
-        if self.image_on_canvas == None:
+        if self.image_on_canvas is None:
             self.image_on_canvas = self.canvas.create_image(0, 0, image = self.photo, anchor = tk.NW)
         else:
             self.canvas.itemconfig(self.image_on_canvas, image = self.photo)
+
 
 def main(args):
     viewer = Array3DViewer(None)
@@ -111,6 +114,7 @@ def main(args):
 
     viewer.master.title('Viewer')
     viewer.mainloop()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "Show a random 3d numpy image")
