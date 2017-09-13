@@ -57,7 +57,7 @@ class CandidateIter(mx.io.DataIter):
             data_chunk = data[start:end, :, :, :]
             label_chunk = labels[start:end]
 
-            self.__iterator = mx.io.NDArrayIter(data = data_chunk, label = label_chunk, batch_size = 30, shuffle = self.shuffle)
+            self.__iterator = mx.io.NDArrayIter(data = data_chunk, label = label_chunk, batch_size = self.batch_size, shuffle = self.shuffle)
 
         return self.__iterator
 
@@ -92,7 +92,7 @@ class CandidateIter(mx.io.DataIter):
 
 
 def main(args):
-    data_iter = CandidateIter(args.root, args.subsets, batch_size = 30)
+    data_iter = CandidateIter(args.root, args.subsets, batch_size = 30, shuffle = True)
     i = 0
     for batch in data_iter:
         if i % 100 == 99:

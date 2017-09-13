@@ -64,6 +64,9 @@ class Array3DViewer(tk.Frame):
         self.on_coordinate_changed()
 
     def on_mouse_movement(self, event):
+        if not hasattr(self, 'array'):
+            return
+
         # axis order is z, y, x, and data x and y axis are swapped
         _, y, x = helper.voxel_to_world((0, event.y * self.stretch_factor[1], event.x * self.stretch_factor[0]), self.origin, self.spacing)
         self.mouse_label.configure(text = "X: %.2f, Y: %.2f" % (x, y))
