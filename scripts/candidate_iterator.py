@@ -1,75 +1,94 @@
+import os, argparse, random, helper
 import mxnet as mx
-import os
-import subprocess
 import numpy as np
-import tarfile
-
-data = np.random.rand(100,3,2,2)
-label = np.random.randint(0, 2, (100,))
-data_iter = mx.io.NDArrayIter(data=data, label=label, batch_size=30)
-for batch in data_iter:
-    print([batch.data, batch.label, batch.pad])
 
 
 class CandidateIter(mx.io.DataIter):
-    def __init__(self, root, subsets, batch_size = 1, data_name = 'data', label_name = 'softmax_label'):
+    def __init__(self, root, subsets, batch_size = 1, data_name = 'data', label_name = 'softmax_label', shuffle = True, chunk_size = 1000):
         self.data_files = []
         self.label_files = []
         for subset in subsets:
-            with open(os.path.join(root, "subset%d.txt" % subset)) as handle:
-                for line in handle:
-                    split = line.split(" ")
+            self.data_files.append(os.path.join(root, "subset%d" % subset, "data.npy"))
+            self.label_files.append(os.path.join(root, "subset%d" % subset, "labels.npy"))
 
-                    assert "data" in split[0]
-                    self.data_files.append(split[0])
+        if shuffle:
+            random.seed(42)
+            random.shuffle(self.data_files)
+            random.seed(42)
+            random.shuffle(self.label_files)
 
-                    assert "label" in split[1]
-                    self.label_files.append(split[1])
-
+        self.shuffle = shuffle
         self.root = root
         self.batch_size = batch_size
+        self.chunk_size = chunk_size
         self.data_name = data_name
         self.label_name = label_name
         self.reset()
+
+    def get_current_iterator(self):
+        while self.__iterator is None:
+            if self.current_file >= len(self.data_files):
+                raise StopIteration
+
+            data = np.memmap(self.data_files[self.current_file], dtype = helper.DTYPE, mode = "r")
+            labels = np.memmap(self.data_files[self.current_file], dtype = helper.DTYPE, mode = "r")
+
+            start = self.current_chunk * self.chunk_size * self.batch_size
+            end = min((self.current_chunk + 1) * self.chunk_size * self.batch_size, data.shape[0])
+
+            self.current_chunk += 1
+
+            if end - start <= self.batch_size:
+                self.current_chunk = 0
+                self.current_file += 1
+                continue
+
+            data_chunk = data[start:end, :, :, :]
+            label_chunk = labels[start:end]
+
+            self.__iterator = mx.io.NDArrayIter(data = data_chunk, label = label_chunk, batch_size = 30, shuffle = self.shuffle)
+
+        return self.__iterator
 
     def __iter__(self):
         return self
 
     def reset(self):
         self.current_file = 0
-        self.current_file_data = None
-        self.current_file_labels = None
+        self.current_chunk = 0
+        self.__iterator = None
 
     def __next__(self):
         return self.next()
 
     @property
     def provide_data(self):
-        return False
+        return self.get_current_iterator().provide_data()
 
     @property
     def provide_label(self):
-        return False
+        return self.get_current_iterator().provide_label()
 
     def next(self):
-        if self.current_file_data == None:
-            if self.current_file == len(self.data_files):
-                raise StopIteration
+        result = None
+        while result is None:
+            iterator = self.get_current_iterator()
+            try:
+                result = iterator.next()
+            except StopIteration:
+                self.__iterator = None
+        return result
 
-            # test memory mapping?
-            self.current_file_data = np.load(os.path.join(self.root, self.data_files[self.current_file]))
-            self.current_file_labels = np.load(os.path.join(self.root, self.label_files[self.current_file]))
-
-        if self.current_file < len(self.data_files):
-            self.current_file += 1
-            data = [mx.nd.array(g(d[1])) for d,g in zip(self._provide_data, self.data_gen)]
-            label = [mx.nd.array(g(d[1])) for d,g in zip(self._provide_label, self.label_gen)]
-            return mx.io.DataBatch(data, label)
-        else:
-            raise StopIteration
 
 def main(args):
-    c = CandidateIter(args.root, args.subsets)
+    data_iter = CandidateIter(args.root, args.subsets, batch_size = 30)
+    for batch in data_iter:
+        print batch.data
+        assert len(batch.data) == 30
+        print batch.label
+        assert len(batch.label) == 30
+        print batch.pad
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "test the dataset iterator")
