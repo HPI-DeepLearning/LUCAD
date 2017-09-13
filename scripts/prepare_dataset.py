@@ -1,4 +1,4 @@
-import helper, argparse, os, math, arrayviewer, time, subprocess
+import helper, argparse, os, math, arrayviewer
 import numpy as np
 
 
@@ -45,8 +45,8 @@ class CandidateStorage(object):
         self.index += 1
 
     def store_info(self, info_object):
-        info_object["created"] = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
-        info_object["revision"] = subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+        info_object["written"] = helper.now()
+        info_object["revision"] = helper.git_hash()
         with open(os.path.join(self.root, "%sinfo.txt" % self.file_prefix), "w") as info_file:
             for k in info_object:
                 info_file.write("%s: %s\n" % (k, info_object[k]))
@@ -62,6 +62,8 @@ class CandidateGenerator(object):
         self.spacings = []
 
         self.augment_class = augment_class
+
+        self.started = helper.now()
 
     def get_augment_factor(self):
         rotation_variants = {"none": 1, "dice": 24}
@@ -166,7 +168,12 @@ class CandidateGenerator(object):
 
             if loading_bar is not None:
                 loading_bar.advance_progress(candidates_generated)
-        self.storage.store_info({"rotate": self.rotate, "resize": self.resize, "flip": self.flip})
+
+    def store_info(self, finished = False):
+        info = {"started": self.started, "rotate": self.rotate, "resize": self.resize, "flip": self.flip}
+        if finished:
+            info["finished"] = helper.now()
+        self.storage.store_info(info)
 
 
 def export_subset(args, subset, candidates):
@@ -187,6 +194,7 @@ def export_subset(args, subset, candidates):
     print "Reserving storage..."
     storage = CandidateStorage(os.path.join(args.output, subset), total, args.cubesize)
     generator.set_candidate_storage(storage)
+    generator.store_info()
 
     print "Exporting %s with %d (%.2f%% original) candidates..." % (subset, total, float(original) / total * 100)
     loading_bar = helper.SimpleLoadingBar("Exporting", total)
@@ -197,6 +205,8 @@ def export_subset(args, subset, candidates):
         generator.set_scan(scan, origin, spacing, args.voxelsize, current_file)
 
         generator.generate(candidates[current_file], args.cubesize, loading_bar, args.preview)
+
+    generator.store_info(True)
 
 
 def main(args):

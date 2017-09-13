@@ -1,10 +1,18 @@
 import SimpleITK as sitk
 import numpy as np
 from PIL import Image
-import argparse, cv2, os, csv, sys, time
+import argparse, cv2, os, csv, sys, time, subprocess
 
 
 DTYPE = 'u1'
+
+
+def now():
+    return time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
+
+
+def git_hash():
+    return subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()
 
 
 def load_itk(filename):
