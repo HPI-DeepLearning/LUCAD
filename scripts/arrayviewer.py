@@ -5,16 +5,21 @@ import numpy as np
 
 
 class Array3DViewer(tk.Frame):
-    def __init__(self, master = None, canvas_size = 512, stretch = True):
+    def __init__(self, master = None, canvas_size = 512, stretch = True, row = 0, column = 0, rowspan = 1, columnspan = 1):
         tk.Frame.__init__(self, master)
 
         self.canvas_size = canvas_size
         self.stretch = stretch
 
-        self.grid(padx = 2, pady = 2)
+        self.grid(padx = 2, pady = 2, row = row, column = column, rowspan = rowspan, columnspan = columnspan)
         self.create_widgets()
         self.bind_all("<Right>", self.on_right_pressed)
         self.bind_all("<Left>", self.on_left_pressed)
+
+        self.connections = []
+
+    def connect_on_coordinate_changed(self, callback):
+        self.connections.append(callback)
 
     def create_widgets(self):
         self.create_coordinates()
@@ -73,12 +78,17 @@ class Array3DViewer(tk.Frame):
         self.update_image(self.coordinate_var.get())
         self.coordinate_label.configure(text = "Z: %.2f" % self.get_currrent_z())
 
+        for callback in self.connections:
+            callback(self.coordinate_var.get())
+
     def set_array(self, array, origin, spacing):
         self.array = array
         self.origin = origin
         self.spacing = spacing
 
+        self.coordinate_var.set(0)
         self.coordinate_menu.configure(to = self.array.shape[0] - 1)
+        self.on_coordinate_changed()
 
     def get_currrent_z(self):
         return self.origin[0] + self.coordinate_var.get() * self.spacing[0]
