@@ -33,10 +33,10 @@ class CandidateStorage(object):
             os.makedirs(self.root)
 
         data_filename = os.path.join(self.root, "%sdata.npy" % self.file_prefix)
-        data_shape = (n, cube_size, cube_size, cube_size)
+        self.data_shape = (n, cube_size, cube_size, cube_size)
         labels_filename = os.path.join(self.root, "%slabels.npy" % self.file_prefix)
 
-        self.data = np.memmap(data_filename, dtype = helper.DTYPE, mode = "w+", shape = data_shape)
+        self.data = np.memmap(data_filename, dtype = helper.DTYPE, mode = "w+", shape = self.data_shape)
         self.labels = np.memmap(labels_filename, dtype = helper.DTYPE, mode = "w+", shape = n)
 
     def store_candidate(self, data, label):
@@ -47,6 +47,7 @@ class CandidateStorage(object):
     def store_info(self, info_object):
         info_object["written"] = helper.now()
         info_object["revision"] = helper.git_hash()
+        info_object["shape"] = self.data_shape
         with open(os.path.join(self.root, "%sinfo.txt" % self.file_prefix), "w") as info_file:
             for k in info_object:
                 info_file.write("%s: %s\n" % (k, info_object[k]))

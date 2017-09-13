@@ -4,12 +4,14 @@ import numpy as np
 
 
 class CandidateIter(mx.io.DataIter):
-    def __init__(self, root, subsets, batch_size = 1, data_name = 'data', label_name = 'softmax_label', shuffle = True, chunk_size = 1000):
+    def __init__(self, root, subsets, batch_size = 1, data_name = 'data', label_name = 'softmax_label', shuffle = False, chunk_size = 100):
         self.data_files = []
         self.label_files = []
+        self.info_files = []
         for subset in subsets:
             self.data_files.append(os.path.join(root, "subset%d" % subset, "data.npy"))
             self.label_files.append(os.path.join(root, "subset%d" % subset, "labels.npy"))
+            self.info_files.append(os.path.join(root, "subset%d" % subset, "info.txt"))
 
         if shuffle:
             random.seed(42)
@@ -30,8 +32,17 @@ class CandidateIter(mx.io.DataIter):
             if self.current_file >= len(self.data_files):
                 raise StopIteration
 
+            shape = []
+            with open(self.info_files[self.current_file]) as info_file:
+                for line in info_file:
+                    if line.startswith("shape: "):
+                        shape = [int(x) for x in line.replace("shape: ", "")[1:-2].split(", ")]
+
             data = np.memmap(self.data_files[self.current_file], dtype = helper.DTYPE, mode = "r")
-            labels = np.memmap(self.data_files[self.current_file], dtype = helper.DTYPE, mode = "r")
+            data.shape = shape
+
+            labels = np.memmap(self.label_files[self.current_file], dtype = helper.DTYPE, mode = "r")
+            labels.shape = (shape[0])
 
             start = self.current_chunk * self.chunk_size * self.batch_size
             end = min((self.current_chunk + 1) * self.chunk_size * self.batch_size, data.shape[0])
@@ -63,11 +74,11 @@ class CandidateIter(mx.io.DataIter):
 
     @property
     def provide_data(self):
-        return self.get_current_iterator().provide_data()
+        return self.get_current_iterator().provide_data
 
     @property
     def provide_label(self):
-        return self.get_current_iterator().provide_label()
+        return self.get_current_iterator().provide_label
 
     def next(self):
         result = None
@@ -82,12 +93,14 @@ class CandidateIter(mx.io.DataIter):
 
 def main(args):
     data_iter = CandidateIter(args.root, args.subsets, batch_size = 30)
+    i = 0
     for batch in data_iter:
-        print batch.data
-        assert len(batch.data) == 30
-        print batch.label
-        assert len(batch.label) == 30
-        print batch.pad
+        if i % 100 == 99:
+            print "Batch %d!" % (i + 1)
+        assert len(batch.data[0]) == 30
+        assert len(batch.label[0]) == 30
+        i += 1
+    print "Finished!"
 
 
 if __name__ == "__main__":
