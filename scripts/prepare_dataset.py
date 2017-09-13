@@ -1,4 +1,4 @@
-import helper, argparse, os, math, arrayviewer
+import helper, argparse, os, math, arrayviewer, time, subprocess
 import numpy as np
 
 
@@ -27,15 +27,14 @@ class CandidateStorage(object):
         self.root = root
         self.n = n
         self.index = 0
-        if file_prefix != "":
-            file_prefix = file_prefix + "_"
+        self.file_prefix = file_prefix if file_prefix == "" else file_prefix + "_"
 
         if not os.path.exists(self.root):
             os.makedirs(self.root)
 
-        data_filename = os.path.join(self.root, "%sdata.npy" % file_prefix)
+        data_filename = os.path.join(self.root, "%sdata.npy" % self.file_prefix)
         data_shape = (n, cube_size, cube_size, cube_size)
-        labels_filename = os.path.join(self.root, "%slabels.npy" % file_prefix)
+        labels_filename = os.path.join(self.root, "%slabels.npy" % self.file_prefix)
 
         self.data = np.memmap(data_filename, dtype = helper.DTYPE, mode = "w+", shape = data_shape)
         self.labels = np.memmap(labels_filename, dtype = helper.DTYPE, mode = "w+", shape = n)
@@ -44,6 +43,13 @@ class CandidateStorage(object):
         self.data[self.index, :, :, :] = data
         self.labels[self.index] = label
         self.index += 1
+
+    def store_info(self, info_object):
+        info_object["created"] = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
+        info_object["revision"] = subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+        with open(os.path.join(self.root, "%sinfo.txt" % self.file_prefix), "w") as info_file:
+            for k in info_object:
+                info_file.write("%s: %s\n" % (k, info_object[k]))
 
 
 class CandidateGenerator(object):
@@ -160,6 +166,7 @@ class CandidateGenerator(object):
 
             if loading_bar is not None:
                 loading_bar.advance_progress(candidates_generated)
+        self.storage.store_info({"rotate": self.rotate, "resize": self.resize, "flip": self.flip})
 
 
 def export_subset(args, subset, candidates):
@@ -169,7 +176,7 @@ def export_subset(args, subset, candidates):
 
     generator = CandidateGenerator(
         flip = ("", "x", "y"),
-        resize = (0.8, 0.866, 0.933, 0.966, 1.0, 1.05, 1.1, 1.15),
+        resize = (0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15),
         rotate = "dice"
     )
     augment_factor = generator.get_augment_factor()
