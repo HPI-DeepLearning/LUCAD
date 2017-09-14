@@ -76,7 +76,9 @@ class CandidateIter(mx.io.DataIter):
 
     @property
     def provide_data(self):
-        return self.get_current_iterator().provide_data
+        data = self.get_current_iterator().provide_data
+        data[0].layout = "NCDHW"
+        return data
 
     @property
     def provide_label(self):
