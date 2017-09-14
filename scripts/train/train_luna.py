@@ -18,7 +18,7 @@ if __name__ == '__main__':
     data.add_data_args(parser)
     data.add_data_aug_args(parser)
     # WE SHOULD BUILD AUG funcion in 3D
-    #data.set_data_aug_level(parser, 3)
+    data.set_data_aug_level(parser, 3)
 
     parser.add_argument('--pretrained', type=str,
                     help='the pre-trained model')
