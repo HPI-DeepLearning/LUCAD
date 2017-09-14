@@ -3,15 +3,37 @@ import mxnet as mx
 import numpy as np
 
 
-def get_test_iterator(batch_size = 30):
+def get_test_iterators(batch_size = 30):
     data = np.load(os.path.join("test_data", "data.npy"))
     label = np.load(os.path.join("test_data", "labels.npy"))
-    return mx.io.NDArrayIter(data = data, label = label, batch_size = batch_size)
+
+    train_data = data[:-180]
+    train_label = label[:-180]
+    # print float(sum(train_label)) / len(train_label)
+
+    train_iter = mx.io.NDArrayIter(data = train_data, label = train_label, batch_size = batch_size, shuffle = True)
+
+    validation_data = data[-180:-90]
+    validation_label = label[-180:-90]
+    # print float(sum(validation_label)) / len(validation_label)
+
+    validation_iter = mx.io.NDArrayIter(data = validation_data, label = validation_label, batch_size = batch_size)
+
+    test_data = data[-90:]
+    test_label = label[-90:]
+    # print float(sum(test_label)) / len(test_label)
+
+    test_iter = mx.io.NDArrayIter(data = test_data, label = test_label, batch_size = batch_size)
+
+    return train_iter, validation_iter, test_iter
+
 
 def main():
-    data_iter = get_test_iterator(30)
-    for batch in data_iter:
-        print([batch.data, batch.label, batch.pad])
+    train_iter, validation_iter, test_iter = get_test_iterators(30)
+    for batch in train_iter:
+        pass
+        # print([batch.data, batch.label, batch.pad])
+
 
 if __name__ == "__main__":
     main()
