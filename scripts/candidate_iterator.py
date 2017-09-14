@@ -27,6 +27,17 @@ class CandidateIter(mx.io.DataIter):
         self.label_name = label_name
         self.reset()
 
+    def sizes(self):
+        sizes = {}
+        for filename in self.label_files:
+            labels = np.memmap(filename, dtype = helper.DTYPE, mode = "r")
+            sizes[filename] = len(labels)
+        return sizes
+
+    def total_size(self):
+        sizes = self.sizes()
+        return sum([sizes[x] for x in sizes])
+
     def get_current_iterator(self):
         while self.__iterator is None:
             if self.current_file >= len(self.data_files):
@@ -97,8 +108,12 @@ class CandidateIter(mx.io.DataIter):
 
 def main(args):
     data_iter = CandidateIter(args.root, args.subsets, batch_size = 30, shuffle = True)
-    print data_iter.provide_data[0].layout
-    print data_iter.provide_data[0].shape
+
+    print "Sizes: %s" % data_iter.sizes()
+    print "Total number of samples: %d" % data_iter.total_size()
+    print "Data layout: %s" % data_iter.provide_data[0].layout
+    print "Data shape: %s" % str(data_iter.provide_data[0].shape)
+
     i = 0
     for batch in data_iter:
         if i == 0:
