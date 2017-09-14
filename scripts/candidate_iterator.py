@@ -38,6 +38,8 @@ class CandidateIter(mx.io.DataIter):
                     if line.startswith("shape: "):
                         shape = [int(x) for x in line.replace("shape: ", "")[1:-2].split(", ")]
 
+            shape = shape[:1] + [1] + shape[1:]
+
             data = np.memmap(self.data_files[self.current_file], dtype = helper.DTYPE, mode = "r")
             data.shape = shape
 
@@ -54,7 +56,7 @@ class CandidateIter(mx.io.DataIter):
                 self.current_file += 1
                 continue
 
-            data_chunk = data[start:end, :, :, :]
+            data_chunk = data[start:end, :, :, :, :]
             label_chunk = labels[start:end]
 
             self.__iterator = mx.io.NDArrayIter(data = data_chunk, label = label_chunk, batch_size = self.batch_size, shuffle = self.shuffle)
@@ -93,8 +95,12 @@ class CandidateIter(mx.io.DataIter):
 
 def main(args):
     data_iter = CandidateIter(args.root, args.subsets, batch_size = 30, shuffle = True)
+    print data_iter.provide_data[0].layout
+    print data_iter.provide_data[0].shape
     i = 0
     for batch in data_iter:
+        if i == 0:
+            print "Batch shape: %s" % ",".join([str(x) for x in batch.data[0].shape])
         if i % 100 == 99:
             print "Batch %d!" % (i + 1)
         assert len(batch.data[0]) == 30

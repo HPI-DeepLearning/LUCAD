@@ -7,6 +7,9 @@ def get_test_iterators(batch_size = 30):
     data = np.load(os.path.join("test_data", "data.npy"))
     label = np.load(os.path.join("test_data", "labels.npy"))
 
+    # add additional channel dimension
+    data = np.expand_dims(data, axis = 1)
+
     train_data = data[:-180]
     train_label = label[:-180]
     # print float(sum(train_label)) / len(train_label)
@@ -31,8 +34,7 @@ def get_test_iterators(batch_size = 30):
 def main():
     train_iter, validation_iter, test_iter = get_test_iterators(30)
     for batch in train_iter:
-        pass
-        # print([batch.data, batch.label, batch.pad])
+        print "Batch shape: %s" % ",".join([str(x) for x in batch.data[0].shape])
 
 
 if __name__ == "__main__":
