@@ -27,6 +27,9 @@ def export_subset(args, subset, candidates):
     total = sum([(sum(augment_factor if i['class'] == '1' else 1 for i in candidates[f]) if f in candidates else 0) for f in files])
     original = sum([(len(candidates[f]) if f in candidates else 0) for f in files])
 
+    if total == 0:
+        return
+
     print "Creating storage..."
     with DistributedStorage(os.path.join(args.output, subset), total, args.cubesize) as storage:
         generator.set_candidate_storage(storage)
@@ -36,6 +39,9 @@ def export_subset(args, subset, candidates):
         loading_bar = helper.SimpleLoadingBar("Exporting", total)
 
         for current_file in files:
+            if current_file not in candidates:
+                continue
+
             scan, origin, spacing = helper.load_itk(os.path.join(args.root, subset, current_file + ".mhd"))
 
             generator.set_scan(scan, origin, spacing, args.voxelsize, current_file)

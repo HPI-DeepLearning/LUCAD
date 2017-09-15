@@ -94,8 +94,8 @@ class CandidateGenerator(object):
 
     def generate_augmented_candidates(self, c, cube_size, cube_size_arr, preview):
         for i in range(0, self.translations):
-            r = translate_limits[1] - translate_limits[0]
-            translation = self.__rng.rand(3) * r + translate_limits[0]
+            r = self.translate_limits[1] - self.translate_limits[0]
+            translation = self.__rng.rand(3) * r + self.translate_limits[0]
             for resize_factor in self.resize:
                 data, label = self.generate_single_candidate(c, cube_size, cube_size_arr, resize_factor, translation if self.translations > 1 else None)
                 for flip_axis in self.flip:
