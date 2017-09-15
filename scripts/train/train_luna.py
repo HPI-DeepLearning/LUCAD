@@ -7,7 +7,7 @@ import mxnet as mx
 
 import os.path, sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir))
-from candidate_iterator import CandidateIter
+from storage.candidate_iterator import CandidateIter
 
 if __name__ == '__main__':
 

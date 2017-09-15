@@ -1,8 +1,10 @@
-import helper, argparse, os
-from arrayviewer import Array3DViewer
-from candidate_iterator import CandidateIter
 import Tkinter as tk
+import argparse
+
 import numpy as np
+
+from storage.candidate_iterator import CandidateIter
+from arrayviewer import Array3DViewer
 
 
 class SetViewer(tk.Frame):

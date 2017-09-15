@@ -1,6 +1,12 @@
-import os, argparse, random, helper, time
+import argparse
+import os
+import random
+import time
+
 import mxnet as mx
 import numpy as np
+
+from util import helper
 
 
 class CandidateIter(mx.io.DataIter):

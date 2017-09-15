@@ -1,7 +1,10 @@
-import helper, argparse, os
-from PIL import Image, ImageTk
 import Tkinter as tk
+import argparse
+
 import numpy as np
+from PIL import Image, ImageTk
+
+from util import helper
 
 
 class Array3DViewer(tk.Frame):

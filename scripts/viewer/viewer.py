@@ -1,16 +1,20 @@
-import helper, argparse, os
-from PIL import Image, ImageTk
-from arrayviewer import Array3DViewer
 import Tkinter as tk
+import argparse
+import os
+
 import numpy as np
+from PIL import Image, ImageTk
+
+import util.helper
+from arrayviewer import Array3DViewer
 
 
 class Viewer(tk.Frame):
     def __init__(self, master = None, root = ""):
         tk.Frame.__init__(self, master)
         self.root = root
-        self.annotations = helper.load_annotations(self.root)
-        self.candidates = helper.load_candidates(self.root)
+        self.annotations = scripts.util.helper.load_annotations(self.root)
+        self.candidates = scripts.util.helper.load_candidates(self.root)
         self.grid(padx = 2, pady = 2)
         self.create_widgets()
 
@@ -79,12 +83,12 @@ class Viewer(tk.Frame):
         self.on_file_changed()
 
     def on_file_changed(self, _ = 0):
-        self.scan, self.origin, self.spacing = helper.load_itk(os.path.join(self.root, self.subset_var.get(), self.files[self.file_var.get()]))
-        self.scan = helper.normalize_to_grayscale(self.scan)
+        self.scan, self.origin, self.spacing = scripts.util.helper.load_itk(os.path.join(self.root, self.subset_var.get(), self.files[self.file_var.get()]))
+        self.scan = scripts.util.helper.normalize_to_grayscale(self.scan)
 
         if self.normalize_var.get():
             target_voxel_mm = 1.0
-            self.scan = helper.rescale_patient_images(self.scan, self.spacing, target_voxel_mm)
+            self.scan = scripts.util.helper.rescale_patient_images(self.scan, self.spacing, target_voxel_mm)
             self.spacing = np.asarray([target_voxel_mm, target_voxel_mm, target_voxel_mm])
 
         self.viewer.set_array(self.scan, self.origin, self.spacing)
@@ -106,13 +110,13 @@ class Viewer(tk.Frame):
             origin = self.origin
         if spacing is None:
             spacing = self.spacing
-        return helper.world_to_voxel(coords, origin, spacing)
+        return scripts.util.helper.world_to_voxel(coords, origin, spacing)
 
     def get_canvas(self):
         return self.viewer.canvas
 
     def voxel_to_world(self, coords):
-        return helper.voxel_to_world(coords, self.origin, self.spacing)
+        return scripts.util.helper.voxel_to_world(coords, self.origin, self.spacing)
 
     def clear_annotations(self):
         for c in self.circles_on_canvas:
@@ -171,7 +175,7 @@ class Viewer(tk.Frame):
     def update_image(self, layer):
         self.layer = layer
 
-        data = helper.normalize_to_grayscale(self.scan[layer,:,:])
+        data = scripts.util.helper.normalize_to_grayscale(self.scan[layer, :, :])
 
         self.img = Image.fromarray(data)
         self.photo = ImageTk.PhotoImage(image = self.img)
