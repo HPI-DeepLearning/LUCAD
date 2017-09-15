@@ -1,4 +1,4 @@
-import os, argparse, random, helper
+import os, argparse, random, helper, time
 import mxnet as mx
 import numpy as np
 
@@ -69,10 +69,7 @@ class CandidateIter(mx.io.DataIter):
                 self.current_file += 1
                 continue
 
-            data_chunk = data[start:end, :, :, :, :]
-            label_chunk = labels[start:end]
-
-            self.__iterator = mx.io.NDArrayIter(data = data_chunk, label = label_chunk, batch_size = self.batch_size, shuffle = self.shuffle)
+            self.__iterator = mx.io.NDArrayIter(data = data[start:end, :, :, :, :], label = labels[start:end], batch_size = self.batch_size, shuffle = self.shuffle)
 
         return self.__iterator
 
@@ -109,6 +106,9 @@ class CandidateIter(mx.io.DataIter):
 
 
 def main(args):
+    start = time.time()
+    chunk_start = start
+
     data_iter = CandidateIter(args.root, args.subsets, batch_size = 30, shuffle = True)
 
     print "Sizes: %s" % data_iter.sizes()
@@ -121,7 +121,11 @@ def main(args):
         if i == 0:
             print "Batch shape: %s" % ",".join([str(x) for x in batch.data[0].shape])
         if i % 100 == 99:
-            print "Batch %d!" % (i + 1)
+            prev_chunk = chunk_start
+            chunk_start = time.time()
+            chunk = chunk_start - prev_chunk
+            avg = (chunk_start - start) / ((i+1)/100.0)
+            print "Batch %d (%.2f, total avg: %.2f sec / 100 batch)!" % (i + 1, chunk, avg)
         assert len(batch.data[0]) == 30
         assert len(batch.label[0]) == 30
         i += 1
