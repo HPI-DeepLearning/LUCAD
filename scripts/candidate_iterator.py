@@ -18,6 +18,8 @@ class CandidateIter(mx.io.DataIter):
             random.shuffle(self.data_files)
             random.seed(42)
             random.shuffle(self.label_files)
+            random.seed(42)
+            random.shuffle(self.info_files)
 
         self.shuffle = shuffle
         self.root = root
