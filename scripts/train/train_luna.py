@@ -47,8 +47,8 @@ if __name__ == '__main__':
         min_random_scale = 1, # if input image has min size k, suggest to use
                               # 256.0/x, e.g. 0.533 for 480
         # train
-        num_epochs       = 10,
-        lr_step_epochs   = '2,4,6,8',
+        num_epochs       = 5,
+        lr_step_epochs   = '1,2,3,4',
         lr               = 0.1,
         lr_factor        = 0.1,
         batch_size       = 30,
