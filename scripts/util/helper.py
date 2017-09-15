@@ -48,7 +48,9 @@ def load_annotations(root):
     return load_csv(root, "annotations.csv")
 
 
-def load_candidates(root):
+def load_candidates(root, test = False):
+    if test:
+        return load_csv(root, "candidates_test.csv")
     return load_csv(root, "candidates.csv")
 
 

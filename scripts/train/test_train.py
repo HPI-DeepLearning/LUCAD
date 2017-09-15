@@ -2,7 +2,7 @@ import argparse
 
 import mxnet as mx
 
-from scripts.storage.candidate_iterator import CandidateIter
+from storage.candidate_iterator import CandidateIter
 
 
 def main(args):

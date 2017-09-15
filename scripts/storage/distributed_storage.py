@@ -61,7 +61,6 @@ class DistributedStorage(object):
                 random.shuffle(self.part_target)
             if self.index < self.n - r:
                 p = self.part_target[p]
-        print p, i0
         self.data_maps[p][i0] = data
         self.label_maps[p][i0] = label
         self.index += 1
@@ -77,16 +76,17 @@ class DistributedStorage(object):
             for k in info_object:
                 info_file.write("%s: %s\n" % (k, info_object[k]))
 
-    def __del__(self):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type_, value, traceback):
         # rewrite all files with shape information
         for i in range(0, self.parts):
-            df = self.get_data_filename(i, True)
-            data = np.memmap(df, dtype = helper.DTYPE, mode = "r+")
-            data.shape = self.get_data_shape(i)
+            data = np.copy(self.data_maps[i])
+            labels = np.copy(self.label_maps[i])
 
-            lf = self.get_data_filename(i, True)
-            labels = np.memmap(lf, dtype = helper.DTYPE, mode = "r+")
-            labels.shape = self.get_label_shape(i)
+            self.data_maps[i] = None
+            self.label_maps[i] = None
 
             if self.shuffle:
                 r = np.random.RandomState(i)
@@ -97,5 +97,6 @@ class DistributedStorage(object):
             np.save(self.get_data_filename(i), data)
             np.save(self.get_labels_filename(i), labels)
 
-            os.remove(df)
-            os.remove(lf)
+            # remove initial memmaps
+            os.remove(self.get_data_filename(i, True))
+            os.remove(self.get_labels_filename(i, True))

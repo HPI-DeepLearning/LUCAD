@@ -26,10 +26,12 @@ def assert_debug(boolean, callback, data):
 
 
 class CandidateGenerator(object):
-    def __init__(self, flip = ("",), resize = (1.0,), rotate = "none", augment_class = "1"):
+    def __init__(self, flip = ("",), resize = (1.0,), rotate = "none", translations = 1, translate_limits = (0, 0), augment_class = "1"):
         self.flip = flip
         self.resize = resize
         self.rotate = rotate
+        self.translations = translations
+        self.translate_limits = translate_limits
 
         self.scans = []
         self.spacings = []
@@ -38,9 +40,11 @@ class CandidateGenerator(object):
 
         self.started = helper.now()
 
+        self.__rng = np.random.RandomState(42)
+
     def get_augment_factor(self):
-        rotation_variants = {"none": 1, "dice": 24}
-        return len(self.flip) * len(self.resize) * rotation_variants[self.rotate]
+        rotation_variants = {"none": 1, "dice": 24, "xy": 4}
+        return len(self.flip) * len(self.resize) * rotation_variants[self.rotate] * self.translations
 
     def set_scan(self, scan, origin, spacing, voxel_size, name = ""):
         self.name = name
@@ -63,33 +67,46 @@ class CandidateGenerator(object):
         self.storage = storage
 
     def augment_with_rotation(self, data, label, preview):
+        if self.rotate == "none":
+            self.store_candidate(data, label, preview)
+        if self.rotate == "xy":
+            for k in range(0, 4):
+                # now rotate the top face: v > ^ <
+                final = np.rot90(data, k, axes = (1, 2))
+                self.store_candidate(final, label, preview)
         # First turn to each side of a 'dice', 0 is original
         #   4
         # 3 0 1 2
         #   5
-        for side in range(0, 6):
-            rotated = data
-            if 0 < side < 4:
-                rotated = np.rot90(data, side, axes = (0, 1))
-            if side == 4:
-                rotated = np.rot90(data, 1, axes = (0, 2))
-            if side == 5:
-                rotated = np.rot90(data, 1, axes = (2, 0))
-            for k in range(0, 4):
-                # now rotate the top face: v > ^ <
-                final = np.rot90(rotated, k, axes = (1, 2))
-                self.store_candidate(final, label, preview)
+        if self.rotate == "dice":
+            for side in range(0, 6):
+                rotated = data
+                if 0 < side < 4:
+                    rotated = np.rot90(data, side, axes = (0, 1))
+                if side == 4:
+                    rotated = np.rot90(data, 1, axes = (0, 2))
+                if side == 5:
+                    rotated = np.rot90(data, 1, axes = (2, 0))
+                for k in range(0, 4):
+                    # now rotate the top face: v > ^ <
+                    final = np.rot90(rotated, k, axes = (1, 2))
+                    self.store_candidate(final, label, preview)
 
     def generate_augmented_candidates(self, c, cube_size, cube_size_arr, preview):
-        for resize_factor in self.resize:
-            data, label = self.generate_single_candidate(c, cube_size, cube_size_arr, resize_factor)
-            for flip_axis in self.flip:
-                if flip_axis == "":
-                    self.augment_with_rotation(data, label, preview)
-                elif flip_axis == "x":
-                    self.augment_with_rotation(np.flip(data, 2), label, preview)
-                elif flip_axis == "y":
-                    self.augment_with_rotation(np.flip(data, 1), label, preview)
+        for i in range(0, self.translations):
+            r = translate_limits[1] - translate_limits[0]
+            translation = self.__rng.rand(3) * r + translate_limits[0]
+            for resize_factor in self.resize:
+                data, label = self.generate_single_candidate(c, cube_size, cube_size_arr, resize_factor, translation if self.translations > 1 else None)
+                for flip_axis in self.flip:
+                    if flip_axis == "":
+                        self.augment_with_rotation(data, label, preview)
+                    elif flip_axis == "x":
+                        self.augment_with_rotation(np.flip(data, 2), label, preview)
+                    elif flip_axis == "y":
+                        self.augment_with_rotation(np.flip(data, 1), label, preview)
+                    elif flip_axis == "xy":
+                        self.augment_with_rotation(np.flip(np.flip(data, 2), 1), label, preview)
         return self.get_augment_factor()
 
     def store_candidate(self, data, label, preview):
@@ -102,13 +119,15 @@ class CandidateGenerator(object):
         self.store_candidate(data, label, preview)
         return 1
 
-    def generate_single_candidate(self, c, cube_size, cube_size_arr, resize_factor = 1.0):
+    def generate_single_candidate(self, c, cube_size, cube_size_arr, resize_factor = 1.0, translation = None):
         index = -1
         for i, f in enumerate(self.resize):
             if abs(f - resize_factor) < 0.01:
                 index = i
 
         candidate_coords = np.asarray((float(c['coordZ']), float(c['coordY']), float(c['coordX'])))
+        if translation is not None:
+            candidate_coords += translation
         voxel_coords = np.round(helper.world_to_voxel(candidate_coords, self.origin, self.spacings[index]))
 
         z0, y0, x0 = sanitize_coords(voxel_coords - (cube_size_arr / 2), 0)
@@ -143,7 +162,13 @@ class CandidateGenerator(object):
                 loading_bar.advance_progress(candidates_generated)
 
     def store_info(self, finished = False):
-        info = {"started": self.started, "rotate": self.rotate, "resize": self.resize, "flip": self.flip}
+        info = {
+            "started": self.started,
+            "rotate": self.rotate,
+            "resize": self.resize,
+            "flip": self.flip,
+            "translate": self.translations
+        }
         if finished:
             info["finished"] = helper.now()
         self.storage.store_info(info)

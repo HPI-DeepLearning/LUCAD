@@ -2,7 +2,7 @@ import os
 import argparse
 import logging
 logging.basicConfig(level=logging.DEBUG)
-from common import find_mxnet, data, fit
+from train.common import find_mxnet, data, fit
 import mxnet as mx
 
 import os.path, sys
