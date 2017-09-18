@@ -51,13 +51,11 @@ class CandidateIter(mx.io.DataIter):
             if self.current_file >= len(self.data_files):
                 raise StopIteration
 
-            shape = []
-            with open(self.info_files[self.current_file]) as info_file:
-                for line in info_file:
-                    if line.startswith("shape: "):
-                        shape = [int(x) for x in line.replace("shape: ", "")[1:-2].split(", ")]
+            info = helper.read_info_file(self.info_files[self.current_file])
+            shape = info["shape"]
 
-            shape = shape[:1] + [1] + shape[1:]
+            if len(shape) == 4:
+                shape = shape[:1] + [1] + shape[1:]
 
             data = np.memmap(self.data_files[self.current_file], dtype = helper.DTYPE, mode = "r")
             data.shape = shape

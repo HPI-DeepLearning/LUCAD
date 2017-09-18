@@ -45,7 +45,7 @@ def export_subset(args, subset, candidates):
 
     print "Creating storage..."
     root = os.path.join(args.output, subset)
-    with DistributedStorage(root, total, args.cubesize, shuffle = args.shuffle) if args.storage == "raw" else CandidateStorage(root, total, args.cubesize) as storage:
+    with DistributedStorage(root, total, args.cubesize, shuffle = args.shuffle) if args.storage == "raw" else CandidateStorage(root, total, args.cubesize, shuffle = args.shuffle) as storage:
         generator.set_candidate_storage(storage)
         generator.store_info({"augmentation": args.augmentation, "total": total, "original": original, "files": files})
 
