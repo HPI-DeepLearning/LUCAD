@@ -33,9 +33,9 @@ class CandidateStorage(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.shuffle:
-            r = np.random.RandomState(i)
+            r = np.random.RandomState(42)
             r.shuffle(self.data)
-            r = np.random.RandomState(i)
+            r = np.random.RandomState(42)
             r.shuffle(self.labels)
 
     def store_info(self, info_object):
