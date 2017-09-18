@@ -61,13 +61,19 @@ class DistributedStorage(object):
         return os.path.join(self.root, format_ % padded_format(i, self.parts))
 
     def store_candidate(self, data, label):
-        i0, p = divmod(self.index, self.parts)
-        n0, r = divmod(self.n, self.parts)
         if self.shuffle:
+            i0, p = divmod(self.index, self.parts)
+            n0, r = divmod(self.n, self.parts)
             if p == 0:
                 random.shuffle(self.part_target)
             if self.index < self.n - r:
                 p = self.part_target[p]
+        else:
+            p = 0
+            i0 = self.index
+            while i0 >= self.get_num_elements(p):
+                i0 -= self.get_num_elements(p)
+                p += 1
         self.data_maps[p][i0] = data
         self.label_maps[p][i0] = label
         self.index += 1

@@ -27,6 +27,12 @@ class CandidateStorage(object):
         self.labels[self.index] = label
         self.index += 1
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return
+
     def store_info(self, info_object):
         info_object["type"] = type(self).__name__
         info_object["written"] = helper.now()

@@ -7,6 +7,7 @@ print sys.path
 import viewer.arrayviewer
 from preparation.candidate_generator import CandidateGenerator
 from storage.distributed_storage import DistributedStorage
+from storage.candidate_storage import CandidateStorage
 from util import helper
 
 
@@ -43,7 +44,8 @@ def export_subset(args, subset, candidates):
         return
 
     print "Creating storage..."
-    with DistributedStorage(os.path.join(args.output, subset), total, args.cubesize) as storage:
+    root = os.path.join(args.output, subset)
+    with DistributedStorage(root, total, args.cubesize, shuffle = args.shuffle) if args.storage == "raw" else CandidateStorage(root, total, args.cubesize) as storage:
         generator.set_candidate_storage(storage)
         generator.store_info({"augmentation": args.augmentation, "total": total, "original": original, "files": files})
 
