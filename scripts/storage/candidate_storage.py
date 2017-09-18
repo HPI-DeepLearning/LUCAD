@@ -28,6 +28,7 @@ class CandidateStorage(object):
         self.index += 1
 
     def store_info(self, info_object):
+        info_object["type"] = type(self).__name__
         info_object["written"] = helper.now()
         info_object["revision"] = helper.git_hash()
         info_object["shape"] = self.data_shape

@@ -15,13 +15,25 @@ def export_subset(args, subset, candidates):
     files = [i.replace(".mhd", "") for i in filter(lambda x: ".mhd" in x, files)]
     files.sort()
 
-    generator = CandidateGenerator(
-        flip = ("", "x", "y", "xy"),
-        resize = (0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15),
-        rotate = "xy",
-        translate_limits = (-1, 1),
-        translations = 4
-    )
+    generator = None
+    if args.augmentation == "nozflip":
+        generator = CandidateGenerator(
+            flip = ("", "x", "y", "xy"),
+            resize = (0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15),
+            rotate = "xy",
+            translate_limits = (-4, 4),
+            translations = 4
+        )
+    elif args.augmentation == "dice":
+        generator = CandidateGenerator(
+            flip = ("", "x", "y"),
+            resize = (0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15),
+            rotate = "dice"
+        )
+    elif args.augmentation == "none":
+        generator = CandidateGenerator()
+
+    assert generator is not None, "bad augmentation method"
     augment_factor = generator.get_augment_factor()
 
     total = sum([(sum(augment_factor if i['class'] == '1' else 1 for i in candidates[f]) if f in candidates else 0) for f in files])
@@ -33,7 +45,7 @@ def export_subset(args, subset, candidates):
     print "Creating storage..."
     with DistributedStorage(os.path.join(args.output, subset), total, args.cubesize) as storage:
         generator.set_candidate_storage(storage)
-        generator.store_info()
+        generator.store_info({"augmentation": args.augmentation})
 
         print "Exporting %s with %d (%.2f%% original) candidates..." % (subset, total, float(original) / total * 100)
         loading_bar = helper.SimpleLoadingBar("Exporting", total)
@@ -48,7 +60,7 @@ def export_subset(args, subset, candidates):
 
             generator.generate(candidates[current_file], args.cubesize, loading_bar, args.preview)
 
-        generator.store_info(True)
+        generator.store_info({"augmentation": args.augmentation, "total": total, "original": original}, True)
 
 
 def main(args):
@@ -64,9 +76,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "prepare dataset for FPRED")
     parser.add_argument("root", type=str, help="containing extracted subset folders and CSVFILES folder")
     parser.add_argument("output", type=str, help="outputfolder, subset folders will be created here")
+    parser.add_argument("--storage", type=str, help="raw should be faster", choices = ["memmap", "raw"], default = "raw")
+    parser.add_argument("--augmentation", type=str, help="data augmentation type", choices = ["dice", "nozflip", "none"], default = "none")
     parser.add_argument("--voxelsize", type=float, help="desired size of voxel in mm for rescaling/normalization", default = 1.0)
     parser.add_argument("--cubesize", type=int, help="length, height and width of exported cubic sample in voxels", default = 36)
     parser.add_argument("--subsets", type=int, nargs="*", help="the subsets which should be processed", default = range(0, 10))
+    parser.add_argument("--shuffle", action="store_true", help="shuffle while storing the data, only possible with raw storage")
     parser.add_argument("--preview", action="store_true", help="show a preview")
     parser.add_argument("--test", action="store_true", help="test with small candidates csv")
     main(parser.parse_args())

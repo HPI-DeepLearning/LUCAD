@@ -28,22 +28,29 @@ class DistributedStorage(object):
 
         self.data_maps = []
         self.label_maps = []
+        s = 0
         for i in range(0, parts):
+            s += self.get_num_elements(i)
             df = self.get_data_filename(i, True)
             lf = self.get_labels_filename(i, True)
 
             self.data_maps.append(np.memmap(df, dtype = helper.DTYPE, mode = "w+", shape = self.get_data_shape(i)))
             self.label_maps.append(np.memmap(lf, dtype = helper.DTYPE, mode = "w+", shape = self.get_label_shape(i)))
 
-    def get_data_shape(self, part):
+        assert s == self.n, "Something went wrong when calculating sizes of parts!"
+
+    def get_num_elements(self, part):
         n0, r = divmod(self.n, self.parts)
-        num_elements = n0 + (1 if part < r else 0)
-        return tuple([num_elements] + self.data_shape)
+        if self.shuffle:
+            return n0 + (1 if part < r else 0)
+        else:
+            return n0 + (0 if (part < self.parts - 1) else r)
+
+    def get_data_shape(self, part):
+        return tuple([self.get_num_elements(part)] + self.data_shape)
 
     def get_label_shape(self, part):
-        n0, r = divmod(self.n, self.parts)
-        num_elements = n0 + (1 if part < r else 0)
-        return num_elements
+        return self.get_num_elements(part)
 
     def get_data_filename(self, i, temp = False):
         format_ = "tmp_data_%s.npy" if temp else "data_%s.npy"
@@ -72,6 +79,7 @@ class DistributedStorage(object):
         info_object["shape"] = tuple([self.n] + self.data_shape)
         info_object["sample_shape"] = self.data_shape
         info_object["samples"] = self.n
+        info_object["shuffled"] = self.shuffle
         with open(os.path.join(self.root, "info.txt"), "w") as info_file:
             for k in info_object:
                 info_file.write("%s: %s\n" % (k, info_object[k]))

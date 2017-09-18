@@ -1,7 +1,13 @@
 import SimpleITK as sitk
 import numpy as np
 from PIL import Image
-import argparse, cv2, os, csv, sys, time, subprocess
+import argparse
+import cv2
+import os
+import csv
+import sys
+import time
+import subprocess
 
 
 DTYPE = 'u1'
@@ -69,6 +75,37 @@ def normalize_to_grayscale(arr, factor = 255):
     data[data > 1] = 1.
     data[data < 0] = 0.
     return data * factor
+
+
+def read_info_file(filename):
+    data = {}
+
+    with open(filename) as info_file:
+        for line in info_file:
+            line = line.strip()
+            pos = line.find(": ")
+
+            key = line[:pos]
+            value = line[pos + 2:]
+
+            if ", " in value:
+                try:
+                    value = [int(x) for x in value.replace("shape: ", "")[1:-1].split(", ")]
+                except ValueError:
+                    try:
+                        value = [float(x) for x in value.replace("shape: ", "")[1:-1].split(", ")]
+                    except ValueError:
+                        value = [x.replace('"', "").replace("'", "") for x in value.replace("shape: ", "")[1:-1].split(", ")]
+
+            if isinstance(value, str):
+                try:
+                    value = int(value)
+                except ValueError:
+                    pass
+
+            data[key] = value
+
+    return data
 
 
 def rescale_patient_images(scan, spacing, target_voxel_mm, is_mask_image=False, verbose=False):

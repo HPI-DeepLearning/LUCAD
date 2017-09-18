@@ -13,9 +13,9 @@ class SetViewer(tk.Frame):
         self.grid(padx = 2, pady = 2)
         self.root = root
         self.frame = self.make_frame()
-        self.button = tk.Button(self.frame, text="Next Sample", command=self._next)
+        self.button = tk.Button(self.frame, text = "Next Sample", command = self._next)
         self.button.grid(column = 0)
-        self.label = tk.Label(self.frame, text="-")
+        self.label = tk.Label(self.frame, text = "-")
         self.label.grid(column = 1)
         self.viewer = Array3DViewer(self, row = 1)
         self.iterator = CandidateIter(self.root, (subset,), batch_size = 30, shuffle = True)

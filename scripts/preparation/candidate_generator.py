@@ -161,14 +161,13 @@ class CandidateGenerator(object):
             if loading_bar is not None:
                 loading_bar.advance_progress(candidates_generated)
 
-    def store_info(self, finished = False):
-        info = {
-            "started": self.started,
-            "rotate": self.rotate,
-            "resize": self.resize,
-            "flip": self.flip,
-            "translate": self.translations
-        }
+    def store_info(self, info_object = {}, finished = False):
+        info_object["started"] = self.started
+        info_object["rotate"] = self.rotate
+        info_object["resize"] = self.resize
+        info_object["flip"] = self.flip
+        info_object["translate_limits"] = self.translate_limits
+        info_object["translate"] = self.translations
         if finished:
-            info["finished"] = helper.now()
-        self.storage.store_info(info)
+            info_object["finished"] = helper.now()
+        self.storage.store_info(info_object)
