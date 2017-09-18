@@ -6,8 +6,8 @@ from train.common import find_mxnet, data, fit
 import mxnet as mx
 
 import os.path, sys
-sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir))
-from storage.candidate_iterator import CandidateIter
+
+from storage.get_iterator import get_iterator
 
 if __name__ == '__main__':
 
@@ -75,8 +75,8 @@ if __name__ == '__main__':
     train_subsets = [int(k) for k in args.train_subsets.split(',')]
     validation_subsets = [int(k) for k in args.val_subsets.split(',')]
 
-    train_iter = CandidateIter(args.data_root, train_subsets, batch_size = args.batch_size, shuffle = True)
-    val_iter = CandidateIter(args.data_root, validation_subsets, batch_size = args.batch_size)    
+    train_iter = get_iterator(args.data_root, train_subsets, batch_size = args.batch_size, shuffle = True)
+    val_iter = get_iterator(args.data_root, validation_subsets, batch_size = args.batch_size)
     args.num_examples = train_iter.total_size()
 
     # load network

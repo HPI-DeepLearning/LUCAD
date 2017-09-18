@@ -12,7 +12,7 @@ from util import helper
 
 
 class DistributedIter(mx.io.DataIter):
-    def __init__(self, root, subsets, batch_size = 1, prefetch = True, shuffle = False):
+    def __init__(self, root, subsets, batch_size = 1, prefetch = True, shuffle = False, data_name = 'data', label_name = 'softmax_label'):
         super(DistributedIter, self).__init__(batch_size)
         self.files = []
         info_files = {}
@@ -57,6 +57,9 @@ class DistributedIter(mx.io.DataIter):
         self.next_file = 0
         self.__iterator = None
         self.__next_iterator = None
+
+        self.data_name = data_name
+        self.label_name = label_name
 
         self.started = True
         self.iterator_ready = threading.Event()
@@ -109,11 +112,11 @@ class DistributedIter(mx.io.DataIter):
 
     @property
     def provide_data(self):
-        return [DataDesc("data", tuple([self.total_size()] + self.info["sample_shape"]), helper.DTYPE, "NCDHW")]
+        return [DataDesc(self.data_name, tuple([self.total_size()] + self.info["sample_shape"]), helper.DTYPE, "NCDHW")]
 
     @property
     def provide_label(self):
-        return [DataDesc("label", tuple([self.total_size()]), helper.DTYPE, "N")]
+        return [DataDesc(self.label_name, tuple([self.total_size()]), helper.DTYPE, "N")]
 
     def load_iterator(self, file_nr):
         if file_nr >= len(self.files):

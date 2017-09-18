@@ -10,7 +10,7 @@ from util import helper
 
 
 class CandidateIter(mx.io.DataIter):
-    def __init__(self, root, subsets, batch_size = 1, data_name = 'data', label_name = 'softmax_label', shuffle = False, chunk_size = 100):
+    def __init__(self, root, subsets, batch_size = 1, shuffle = False, chunk_size = 100, data_name = 'data', label_name = 'softmax_label'):
         self.data_files = []
         self.label_files = []
         self.info_files = []
@@ -73,7 +73,9 @@ class CandidateIter(mx.io.DataIter):
                 self.current_file += 1
                 continue
 
-            self.__iterator = mx.io.NDArrayIter(data = data[start:end, :, :, :, :], label = labels[start:end], batch_size = self.batch_size, shuffle = self.shuffle)
+            self.__iterator = mx.io.NDArrayIter(data = data[start:end, :, :, :, :], label = labels[start:end],
+                                                batch_size = self.batch_size, shuffle = self.shuffle,
+                                                data_name = self.data_name, label_name = self.label_name)
 
         return self.__iterator
 

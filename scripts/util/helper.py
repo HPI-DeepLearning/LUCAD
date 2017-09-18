@@ -80,6 +80,9 @@ def normalize_to_grayscale(arr, factor = 255):
 def read_info_file(filename):
     data = {}
 
+    if not os.path.isfile(filename):
+        return data
+
     with open(filename) as info_file:
         for line in info_file:
             line = line.strip()
