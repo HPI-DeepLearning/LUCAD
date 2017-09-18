@@ -2,12 +2,13 @@ import os
 import argparse
 import logging
 logging.basicConfig(level=logging.DEBUG)
-from train.common import find_mxnet, data, fit
+from common import find_mxnet, data, fit
 import mxnet as mx
 
 import os.path, sys
-
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir))
 from storage.get_iterator import get_iterator
+
 
 if __name__ == '__main__':
 
