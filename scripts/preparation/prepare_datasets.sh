@@ -8,51 +8,63 @@ fi
 DATA_ROOT=$1
 
 # for training and validation:
+OUTPUT_DIR="${DATA_ROOT}/dice_memmap_shuffled"
+mkdir -p "${OUTPUT_DIR}"
 python scripts/preparation/prepare_dataset.py \
     --storage memmap \
     --augmentation dice \
-    --shuffled \
+    --shuffle \
     ${DATA_ROOT}/original \
-    ${DATA_ROOT}/dice_memmap_shuffled \
-    > ${DATA_ROOT}/dice_memmap_shuffled/preparation.log
+    ${OUTPUT_DIR} \
+    > ${OUTPUT_DIR}/preparation.log
 
-python scripts/preparation/prepare_dataset.py \
-    --storage memmap \
-    --augmentation nozflip \
-    --shuffled \
-    ${DATA_ROOT}/original \
-    ${DATA_ROOT}/nozflip_memmap_shuffled \
-    > ${DATA_ROOT}/nozflip_memmap_shuffled/preparation.log
-
+OUTPUT_DIR="${DATA_ROOT}/dice_raw_shuffled"
+mkdir -p "${OUTPUT_DIR}"
 python scripts/preparation/prepare_dataset.py \
     --storage raw \
     --augmentation dice \
-    --shuffled \
+    --shuffle \
     ${DATA_ROOT}/original \
-    ${DATA_ROOT}/dice_raw_shuffled \
-    > ${DATA_ROOT}/dice_raw_shuffled/preparation.log
+    ${OUTPUT_DIR} \
+    > ${OUTPUT_DIR}/preparation.log
 
+OUTPUT_DIR="${DATA_ROOT}/nozflip_memmap_shuffled"
+mkdir -p "${OUTPUT_DIR}"
+python scripts/preparation/prepare_dataset.py \
+    --storage memmap \
+    --augmentation nozflip \
+    --shuffle \
+    ${DATA_ROOT}/original \
+    ${OUTPUT_DIR} \
+    > ${OUTPUT_DIR}/preparation.log
+
+OUTPUT_DIR="${DATA_ROOT}/nozflip_raw_shuffled"
+mkdir -p "${OUTPUT_DIR}"
 python scripts/preparation/prepare_dataset.py \
     --storage raw \
     --augmentation nozflip \
-    --shuffled \
+    --shuffle \
     ${DATA_ROOT}/original \
-    ${DATA_ROOT}/nozflip_raw_shuffled \
-    > ${DATA_ROOT}/nozflip_raw_shuffled/preparation.log
+    ${OUTPUT_DIR} \
+    > ${OUTPUT_DIR}/preparation.log
 
 
 # for testing:
+OUTPUT_DIR="${DATA_ROOT}/none_memmap"
+mkdir -p "${OUTPUT_DIR}"
 python scripts/preparation/prepare_dataset.py \
     --storage memmap \
     --augmentation none \
     ${DATA_ROOT}/original \
-    ${DATA_ROOT}/none_memmap \
-    > ${DATA_ROOT}/none_memmap/preparation.log
+    ${OUTPUT_DIR} \
+    > ${OUTPUT_DIR}/preparation.log
     # == non-augmented
 
+OUTPUT_DIR="${DATA_ROOT}/none_raw"
+mkdir -p "${OUTPUT_DIR}"
 python scripts/preparation/prepare_dataset.py \
     --storage raw \
     --augmentation none \
     ${DATA_ROOT}/original \
-    ${DATA_ROOT}/none_raw \
-    > ${DATA_ROOT}/none_raw/preparation.log
+    ${OUTPUT_DIR} \
+    > ${OUTPUT_DIR}/preparation.log
