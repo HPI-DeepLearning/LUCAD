@@ -66,8 +66,8 @@ def compute_mean_ci(interp_sens, confidence = 0.95):
         vec.sort()
 
         sens_mean[i] = np.average(vec)
-        sens_lb[i] = vec[math.floor(Pz*len(vec))]
-        sens_up[i] = vec[math.floor((1.0-Pz)*len(vec))]
+        sens_lb[i] = vec[int(math.floor(Pz*len(vec)))]
+        sens_up[i] = vec[int(math.floor((1.0-Pz)*len(vec)))]
 
     return sens_mean,sens_lb,sens_up
 
