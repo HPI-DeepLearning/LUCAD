@@ -12,7 +12,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.par
 from storage.get_iterator import get_iterator
 
 # define classification
-cls_labels = ['false positive', 'true positive']
+cls_labels = ['negative', 'positive']
 
 def score(model_prefix, epoch, val_subsets, metrics, gpus, batch_size, rgb_mean, data_root,
           image_shape='1,36,36,36', data_nthreads=4):
@@ -82,7 +82,7 @@ if __name__ == '__main__':
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
 
-    metrics = [mx.metric.create('acc')]#,
+    metrics = [mx.metric.create('acc'), mx.metric.create('f1')]#,
                #mx.metric.create('top_k_accuracy', top_k = 5)]
 
     (speed,) = score(metrics = metrics, **vars(args))

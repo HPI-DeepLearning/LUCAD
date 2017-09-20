@@ -54,7 +54,11 @@ def load_annotations(root):
     return load_csv(root, "annotations.csv")
 
 
-def load_candidates(root, test = False):
+def load_candidates(root, test = False, v2 = False):
+    if test and v2:
+        raise ValueError("Test and v2 Options can not be combined!")
+    if v2:
+        return load_csv(root, "candidates_V2.csv")
     if test:
         return load_csv(root, "candidates_test.csv")
     return load_csv(root, "candidates.csv")
