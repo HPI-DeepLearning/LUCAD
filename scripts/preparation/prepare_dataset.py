@@ -68,7 +68,7 @@ def export_subset(args, subset, candidates):
 def main(args):
     subsets = ["subset" + str(i) for i in args.subsets]
 
-    candidates = helper.load_candidates(args.root, args.test, args.v2)
+    candidates = helper.load_candidates(args.root, args.test)
 
     for subset in subsets:
         export_subset(args, subset, candidates)
@@ -85,6 +85,5 @@ if __name__ == "__main__":
     parser.add_argument("--subsets", type=int, nargs="*", help="the subsets which should be processed", default = range(0, 10))
     parser.add_argument("--shuffle", action="store_true", help="shuffle while storing the data, only possible with raw storage")
     parser.add_argument("--preview", action="store_true", help="show a preview")
-    parser.add_argument("--v2", action="store_true", help="use candidates_V2 for testing")
     parser.add_argument("--test", action="store_true", help="test with small candidates csv")
     main(parser.parse_args())
