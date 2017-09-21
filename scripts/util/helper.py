@@ -79,7 +79,7 @@ def normalize_to_grayscale(arr, factor = 255):
 
 def check_and_combine(info_files, check = ("rotate", "flip", "sample_shape", "translate", "type", "resize", "revision")):
     if len(info_files) == 1:
-        return info_files[0]
+        return info_files[info_files.keys()[0]]
 
     comparison = None
     for subset, info_data in info_files.items():
