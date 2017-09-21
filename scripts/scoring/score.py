@@ -1,5 +1,5 @@
 import argparse
-from common import find_mxnet
+from train.common import find_mxnet
 import mxnet as mx
 import time
 import os
@@ -66,19 +66,22 @@ def score(model_prefix, epoch, val_subsets, metrics, gpus, batch_size, rgb_mean,
     num = 0
     tic = time.time()
 
+    confusion = np.zeros((2, 2))
+
     for batch in val_iter:
         mod.forward(batch, is_train=False)
         prob = mod.get_outputs()[0].asnumpy()
         prob = np.squeeze(prob)
-        for i,p in enumerate(prob):
+        for i, p in enumerate(prob):
             a = np.argmax(p)
-            # we print the prediction results:
-            # logging.info('predict index=%s, probability=%f, predicted class=%s, label class=%d' %(a, p[a], cls_labels[a], batch.label[0].asnumpy()[i]))
+            current_label = int(round(batch.label[0].asnumpy()[i]))
+            confusion[current_label, a] += 1
             if write_output:
                 if (num + i) >= len(filtered_data):
                     logging.debug("Skipping %d, padded batch" % (num + i))
                     logging.debug("Batch padding: %s, Index: %d" % (str(batch.pad), i))
                     break
+                assert current_label == int(filtered_data[num + i]["class"]), "original and processed labels not equal"
                 filtered_data[num + i]["probability"] = float(a)
                 output_handle.write("%s\n" % ",".join([str(filtered_data[num + i][col]) for col in header]))
         for m in metrics:
@@ -90,6 +93,10 @@ def score(model_prefix, epoch, val_subsets, metrics, gpus, batch_size, rgb_mean,
             break
     if write_output:
         output_handle.close()
+    logging.info("True  Negatives (Label 0, Predicted 0): %d" % confusion[0][0])
+    logging.info("False Positives (Label 0, Predicted 1): %d" % confusion[0][1])
+    logging.info("True  Positives (Label 1, Predicted 1): %d" % confusion[1][1])
+    logging.info("False Negatives (Label 1, Predicted 0): %d" % confusion[1][0])
     return (num / (time.time() - tic), )
 
 
