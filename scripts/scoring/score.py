@@ -15,7 +15,8 @@ from storage.get_iterator import get_iterator
 # define classification
 cls_labels = ['negative', 'positive']
 
-def score(model_prefix, epoch, val_subsets, metrics, gpus, batch_size, rgb_mean, data_root, output_file, original_data_root,
+
+def score(model_prefix, epoch, val_subsets, metrics, gpus, batch_size, rgb_mean, data_root, output_file, original_data_root, limit, overwrite,
           image_shape='1,36,36,36', data_nthreads=4):
 
     # create validation iterator
@@ -28,6 +29,12 @@ def score(model_prefix, epoch, val_subsets, metrics, gpus, batch_size, rgb_mean,
     write_output = False
     if output_file != "":
         write_output = True
+        parent_directory = os.path.dirname(output_file)
+        if not os.path.exists(parent_directory):
+            os.makedirs(parent_directory)
+        elif os.path.isfile(output_file) and not overwrite:
+            logging.error("Not overwriting file without --overwrite.")
+            return (0.0,)
         output_handle = open(output_file, "w")
         header = ["seriesuid", "coordX", "coordY", "coordZ", "probability"]
         output_handle.write("%s\n" % ",".join(header))
@@ -69,7 +76,7 @@ def score(model_prefix, epoch, val_subsets, metrics, gpus, batch_size, rgb_mean,
             # logging.info('predict index=%s, probability=%f, predicted class=%s, label class=%d' %(a, p[a], cls_labels[a], batch.label[0].asnumpy()[i]))
             if write_output:
                 if (num + i) >= len(filtered_data):
-                    logging.debug("Skipping %d, padded batch" % num + i)
+                    logging.debug("Skipping %d, padded batch" % (num + i))
                     logging.debug("Batch padding: %s, Index: %d" % (str(batch.pad), i))
                     break
                 filtered_data[num + i]["probability"] = float(a)
@@ -77,15 +84,10 @@ def score(model_prefix, epoch, val_subsets, metrics, gpus, batch_size, rgb_mean,
         for m in metrics:
             mod.update_metric(m, batch.label)
         num += batch_size
-        #= this can be changed for setting the number of samples we want to evaluate.
-        # comment out this block of codes will process the whole validation set
-        #'''
-        # if num >= 10000:
-        #     total_bat = time.time() - tic
-        #     logging.info('%f second per image, total time: %f', total_bat/num, total_bat)
-        #     break
-        #     #'''
-        #     #==============#
+        if 0 < limit <= num:
+            total_bat = time.time() - tic
+            logging.info('%f second per image, total time: %f', total_bat/num, total_bat)
+            break
     if write_output:
         output_handle.close()
     return (num / (time.time() - tic), )
@@ -100,7 +102,9 @@ if __name__ == '__main__':
     parser.add_argument('--rgb-mean', type=str, default='0,0,0')
     parser.add_argument('--val-subsets', type=str, required=True)
     parser.add_argument('--image-shape', type=str, default='1,36,36,36')
+    parser.add_argument('--limit', type=int, default=0)
     parser.add_argument('--output-file', type=str, default="")
+    parser.add_argument('--overwrite', action="store_true")
     parser.add_argument('--data-nthreads', type=int, default=4,
                         help='number of threads for data decoding')
     parser.add_argument('--epoch', type=int, default=0,
