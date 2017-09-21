@@ -47,7 +47,7 @@ def export_subset(args, subset, candidates):
     root = os.path.join(args.output, subset)
     with DistributedStorage(root, total, args.cubesize, shuffle = args.shuffle) if args.storage == "raw" else CandidateStorage(root, total, args.cubesize, shuffle = args.shuffle) as storage:
         generator.set_candidate_storage(storage)
-        generator.store_info({"augmentation": args.augmentation, "total": total, "original": original, "files": files})
+        generator.store_info({"augmentation": args.augmentation, "total": total, "original": original, "files": files, "args": args})
 
         print "Exporting %s with %d (%.2f%% original) candidates..." % (subset, total, float(original) / total * 100)
         loading_bar = helper.SimpleLoadingBar("Exporting", total)
@@ -62,7 +62,7 @@ def export_subset(args, subset, candidates):
 
             generator.generate(candidates[current_file], args.cubesize, loading_bar, args.preview)
 
-        generator.store_info({"augmentation": args.augmentation, "total": total, "original": original, "files": files}, True)
+        generator.store_info({"augmentation": args.augmentation, "total": total, "original": original, "files": files, "args": args}, True)
 
 
 def main(args):
