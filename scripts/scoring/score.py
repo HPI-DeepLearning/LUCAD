@@ -36,7 +36,7 @@ def score(model_prefix, epoch, val_subsets, metrics, gpus, batch_size, rgb_mean,
             logging.error("Not overwriting file without --overwrite.")
             return (0.0,)
         output_handle = open(output_file, "w")
-        header = ["seriesuid", "coordX", "coordY", "coordZ", "probability"]
+        header = ["seriesuid", "coordX", "coordY", "coordZ", "probability", "class"]
         output_handle.write("%s\n" % ",".join(header))
         # only in this case we need to read the candidates csv
         if original_data_root == "":
@@ -82,7 +82,8 @@ def score(model_prefix, epoch, val_subsets, metrics, gpus, batch_size, rgb_mean,
                     logging.debug("Batch padding: %s, Index: %d" % (str(batch.pad), i))
                     break
                 assert current_label == int(filtered_data[num + i]["class"]), "original and processed labels not equal"
-                filtered_data[num + i]["probability"] = float(a)
+                filtered_data[num + i]["probability"] = p[1]
+                filtered_data[num + i]["class"] = a
                 output_handle.write("%s\n" % ",".join([str(filtered_data[num + i][col]) for col in header]))
         for m in metrics:
             mod.update_metric(m, batch.label)
