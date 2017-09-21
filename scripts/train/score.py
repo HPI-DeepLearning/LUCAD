@@ -68,6 +68,10 @@ def score(model_prefix, epoch, val_subsets, metrics, gpus, batch_size, rgb_mean,
             # we print the prediction results:
             # logging.info('predict index=%s, probability=%f, predicted class=%s, label class=%d' %(a, p[a], cls_labels[a], batch.label[0].asnumpy()[i]))
             if write_output:
+                if (num + i) >= len(filtered_data):
+                    logging.debug("Skipping %d, padded batch" % num + i)
+                    logging.debug("Batch padding: %s, Index: %d" % (str(batch.pad), i))
+                    break
                 filtered_data[num + i]["probability"] = float(a)
                 output_handle.write("%s\n" % ",".join([str(filtered_data[num + i][col]) for col in header]))
         for m in metrics:
