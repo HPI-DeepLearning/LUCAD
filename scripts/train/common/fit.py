@@ -165,6 +165,7 @@ def fit(args, network, train, val, **kwargs):
 
     # evaluation metrices
     eval_metrics = ['accuracy']
+    eval_metrics.append(mx.metric.create('f1'))
     if args.top_k > 1:
         eval_metrics.append(mx.metric.create('top_k_accuracy', top_k=args.top_k))
 
