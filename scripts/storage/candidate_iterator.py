@@ -19,9 +19,9 @@ class CandidateIter(mx.io.DataIter):
             self.label_files.append(os.path.join(root, "subset%d" % subset, "labels.npy"))
             self.info_files.append(os.path.join(root, "subset%d" % subset, "info.txt"))
 
-        info_files = []
+        info_files = {}
         for subset in subsets:
-            info_files.append(helper.read_info_file(os.path.join(root, "subset%d" % subset, "info.txt")))
+            info_files[subset] = helper.read_info_file(os.path.join(root, "subset%d" % subset, "info.txt"))
 
         self.info = helper.check_and_combine(info_files)
 
