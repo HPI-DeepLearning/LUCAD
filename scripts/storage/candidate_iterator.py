@@ -19,6 +19,12 @@ class CandidateIter(mx.io.DataIter):
             self.label_files.append(os.path.join(root, "subset%d" % subset, "labels.npy"))
             self.info_files.append(os.path.join(root, "subset%d" % subset, "info.txt"))
 
+        info_files = []
+        for subset in subsets:
+            info_files.append(helper.read_info_file(os.path.join(root, "subset%d" % subset, "info.txt")))
+
+        self.info = helper.check_and_combine(info_files)
+
         if shuffle:
             random.seed(42)
             random.shuffle(self.data_files)
@@ -34,6 +40,9 @@ class CandidateIter(mx.io.DataIter):
         self.data_name = data_name
         self.label_name = label_name
         self.reset()
+
+    def get_info(self):
+        return self.info
 
     def sizes(self):
         sizes = {}

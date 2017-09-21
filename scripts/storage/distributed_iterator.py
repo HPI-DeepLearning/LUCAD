@@ -20,22 +20,7 @@ class DistributedIter(mx.io.DataIter):
         for subset in subsets:
             info_files[subset] = helper.read_info_file(os.path.join(root, "subset%d" % subset, "info.txt"))
 
-        check = ["rotate", "flip", "sample_shape", "translate", "type", "resize", "revision"]
-        comparison = None
-        for subset, info_data in info_files.items():
-            if comparison is None:
-                comparison = info_data
-                continue
-            for key, val in comparison.items():
-                if key not in check:
-                    continue
-                if isinstance(val, list):
-                    ok = all([x == y for x, y in zip(comparison[key], info_data[key])])
-                else:
-                    ok = comparison[key] == info_data[key]
-                assert ok, "Error: %s is different for subset %d: %s" % (key, subset, str(val))
-
-        self.info = {key: comparison[key] for key in comparison if key in check}
+        self.info = helper.check_and_combine(info_files)
 
         for subset in subsets:
             files = os.listdir(os.path.join(root, "subset%d" % subset))
@@ -80,6 +65,9 @@ class DistributedIter(mx.io.DataIter):
         self.prefetch_thread = threading.Thread(target = prefetch_func, args = [self])
         self.prefetch_thread.setDaemon(True)
         self.prefetch_thread.start()
+
+    def get_info(self):
+        return self.info
 
     def __del__(self):
         self.started = False

@@ -57,7 +57,7 @@ def load_annotations(root):
 def load_candidates(root, test = False):
     if test:
         return load_csv(root, "candidates_test.csv")
-    return load_csv(root, "candidates.csv")
+    return load_csv(root, "candidates_V2.csv")
 
 
 def world_to_voxel(coords, origin, spacing):
@@ -75,6 +75,27 @@ def normalize_to_grayscale(arr, factor = 255):
     data[data > 1] = 1.
     data[data < 0] = 0.
     return data * factor
+
+
+def check_and_combine(info_files, check = ("rotate", "flip", "sample_shape", "translate", "type", "resize", "revision")):
+    if len(info_files) == 1:
+        return info_files[0]
+
+    comparison = None
+    for subset, info_data in info_files.items():
+        if comparison is None:
+            comparison = info_data
+            continue
+        for key, val in comparison.items():
+            if key not in check:
+                continue
+            if isinstance(val, list):
+                ok = all([x == y for x, y in zip(comparison[key], info_data[key])])
+            else:
+                ok = comparison[key] == info_data[key]
+            assert ok, "Error: %s is different for subset %d: %s" % (key, subset, str(val))
+
+    return {key: comparison[key] for key in comparison if key in check}
 
 
 def read_info_file(filename):
