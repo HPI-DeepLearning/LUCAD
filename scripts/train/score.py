@@ -76,12 +76,12 @@ def score(model_prefix, epoch, val_subsets, metrics, gpus, batch_size, rgb_mean,
         #= this can be changed for setting the number of samples we want to evaluate.
         # comment out this block of codes will process the whole validation set
         #'''
-        if num >= 1000:
-            total_bat = time.time() - tic
-            logging.info('%f second per image, total time: %f', total_bat/num, total_bat)
-            break
-            #'''
-            #==============#
+        # if num >= 10000:
+        #     total_bat = time.time() - tic
+        #     logging.info('%f second per image, total time: %f', total_bat/num, total_bat)
+        #     break
+        #     #'''
+        #     #==============#
     if write_output:
         output_handle.close()
     return (num / (time.time() - tic), )
