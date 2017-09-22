@@ -149,11 +149,10 @@ class CandidateGenerator(object):
 
         size = self.resize[index]
         actual_voxel_size = size * self.voxel_size
-        rescaled = helper.rescale_patient_images(self.original_scan, self.original_spacing, actual_voxel_size)
 
         self.current_resize_index = index
+        self.current_scan = (helper.normalize_to_grayscale(helper.rescale_patient_images(self.original_scan, self.original_spacing, actual_voxel_size), type = self.normalization).astype(helper.DTYPE))
         self.current_spacing = (np.asarray([actual_voxel_size, actual_voxel_size, actual_voxel_size]))
-        self.current_scan = (helper.normalize_to_grayscale(rescaled, type = self.normalization).astype(helper.DTYPE))
 
     def store_candidate(self, data, label, preview):
         if preview:
