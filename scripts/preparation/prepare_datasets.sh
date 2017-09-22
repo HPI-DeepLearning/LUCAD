@@ -3,7 +3,7 @@
 function usage_and_exit() {
     echo "usage: ./prepare_datasets.sh data_root configuration"
     echo "    data_root     - path to data direcotires should contain 'original' folder with original data"
-    echo "    configuration - [normal, fonova, test]"
+    echo "    configuration - [normal, fonova7, fonova100, test]"
     exit 1
 }
 
@@ -24,8 +24,12 @@ if [ "${CONFIG}" == "normal" ]; then
     OPTIONS="--storage memmap --augmentation dice --shuffle"
 fi
 
-if [ "${CONFIG}" == "fonova" ]; then
+if [ "${CONFIG}" == "fonova7" ]; then
     OPTIONS="--storage memmap --augmentation fonova --shuffle --voxelsize 0.5556"
+fi
+
+if [ "${CONFIG}" == "fonova100" ]; then
+    OPTIONS="--storage memmap --augmentation fonova --shuffle --voxelsize 0.5556 --factor 100"
 fi
 
 if [ "${OPTIONS}" == "" ]; then
