@@ -41,13 +41,24 @@ check_script "${CONCAT_SCRIPT}"
 
 ${CONCAT_SCRIPT} "${OUTPUT_FOLDER}" "concat.csv"
 
+RESULTS_FILE="${OUTPUT_FOLDER}/concat.csv"
+
+NUM_LINES="$(wc -l ${RESULTS_FILE})"
+
+if [[ "${NUM_LINES}" == "754976 *" ]]; then
+    echo "the result file ${RESULTS_FILE} has a wrong number of lines, maybe some output files are missing?"
+    exit 1
+else
+    echo "Concatenation finished: result file ${RESULTS_FILE} has correct number of lines."
+fi
+
 ANN_ROOT="${GIT_ROOT}/evaluation/annotations"
 
 mkdir -p "${OUTPUT_FOLDER}/CADEvaluation"
 
 echo "Starting evaluation, this can take a while..."
 
-python ${EVALUATION_SCRIPT} "${ANN_ROOT}/annotations.csv" "${ANN_ROOT}/annotations_excluded.csv" "${ANN_ROOT}/seriesuids.csv" "${OUTPUT_FOLDER}/concat.csv" "${OUTPUT_FOLDER}/CADEvaluation" &> "${OUTPUT_FOLDER}/CADEvaluation/evaluation.log"
+python ${EVALUATION_SCRIPT} "${ANN_ROOT}/annotations.csv" "${ANN_ROOT}/annotations_excluded.csv" "${ANN_ROOT}/seriesuids.csv" "${RESULTS_FILE}" "${OUTPUT_FOLDER}/CADEvaluation" &> "${OUTPUT_FOLDER}/CADEvaluation/evaluation.log"
 
 STATUS=$?
 if [ ${STATUS} -ne 0 ]; then

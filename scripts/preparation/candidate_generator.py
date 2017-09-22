@@ -76,6 +76,10 @@ class CandidateGenerator(object):
         self.original_spacing = spacing
         self.voxel_size = voxel_size
 
+        self.current_resize_index = -1
+        self.current_scan = None
+        self.current_spacing = None
+
     def set_candidate_storage(self, storage):
         self.storage = storage
 
