@@ -161,7 +161,7 @@ def rescale_patient_images(scan, spacing, target_voxel_mm, is_mask_image=False, 
         res2 = cv2.resize(res2, dsize=None, fx=resize_x, fy=resize_y, interpolation=interpolation)
         res1 = res1.swapaxes(0, 2)
         res2 = res2.swapaxes(0, 2)
-        res = numpy.vstack([res1, res2])
+        res = np.vstack([res1, res2])
         res = res.swapaxes(0, 2)
     else:
         res = cv2.resize(res, dsize=None, fx=resize_x, fy=resize_y, interpolation=interpolation)
