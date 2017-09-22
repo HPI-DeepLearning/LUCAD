@@ -20,12 +20,14 @@ def export_subset(args, subset, candidates):
             resize = (0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15),
             rotate = "xy",
             translate_limits = (-4, 4),
+            factor = args.factor,
             translations = 4
         )
     elif args.augmentation == "dice":
         generator = CandidateGenerator(
             flip = ("", "x", "y"),
             resize = (0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15),
+            factor = args.factor,
             rotate = "dice"
         )
     elif args.augmentation == "fonova":
@@ -36,7 +38,7 @@ def export_subset(args, subset, candidates):
             translate_limits = (-2, 2),
             translate = "after",
             translate_axes = "xy",
-            factor = 7,
+            factor = 7 if args.factor == 0 else args.factor,
             normalization = "fonova"
         )
     elif args.augmentation == "none":
@@ -96,6 +98,7 @@ if __name__ == "__main__":
     parser.add_argument("--storage", type=str, help="raw should be faster", choices = ["memmap", "raw"], default = "memmap")
     parser.add_argument("--augmentation", type=str, help="data augmentation type", choices = ["fonova", "dice", "nozflip", "none"], default = "none")
     parser.add_argument("--voxelsize", type=float, help="desired size of voxel in mm for rescaling/normalization", default = 1.0)
+    parser.add_argument("--factor", type=int, help="create a fixed number of random augmentation instead of all", default = 0)
     parser.add_argument("--cubesize", type=int, help="length, height and width of exported cubic sample in voxels", default = 36)
     parser.add_argument("--subsets", type=int, nargs="*", help="the subsets which should be processed", default = range(0, 10))
     parser.add_argument("--shuffle", action="store_true", help="shuffle while storing the data")

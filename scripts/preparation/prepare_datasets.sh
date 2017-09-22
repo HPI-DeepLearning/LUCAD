@@ -16,19 +16,19 @@ CONFIG=$2
 DATA_PREFIX="v2_${CONFIG}"
 
 OPTIONS=""
-if [ "${CONFIG}" -eq "test" ]; then
+if [ "${CONFIG}" == "test" ]; then
     OPTIONS="--storage memmap --augmentation none"
 fi
 
-if [ "${CONFIG}" -eq "normal" ]; then
+if [ "${CONFIG}" == "normal" ]; then
     OPTIONS="--storage memmap --augmentation dice --shuffle"
 fi
 
-if [ "${CONFIG}" -eq "fonova" ]; then
+if [ "${CONFIG}" == "fonova" ]; then
     OPTIONS="--storage memmap --augmentation fonova --shuffle --voxelsize 0.5556"
 fi
 
-if [ "${OPTIONS}" -e "" ]; then
+if [ "${OPTIONS}" == "" ]; then
     usage_and_exit
 fi
 
