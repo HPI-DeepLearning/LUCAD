@@ -1,9 +1,6 @@
 import argparse
 import os
 import sys
-
-print sys.path
-
 import viewer.arrayviewer
 from preparation.candidate_generator import CandidateGenerator
 from storage.distributed_storage import DistributedStorage
@@ -30,6 +27,16 @@ def export_subset(args, subset, candidates):
             flip = ("", "x", "y"),
             resize = (0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15),
             rotate = "dice"
+        )
+    elif args.augmentation == "fonova":
+        generator = CandidateGenerator(
+            flip = ("", "x", "y"),
+            resize = (0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15),
+            rotate = "xy",
+            translate_limits = (-2, 2),
+            translate = "after",
+            translate_axes = "xy",
+            factor = 7
         )
     elif args.augmentation == "none":
         generator = CandidateGenerator()
@@ -78,12 +85,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "prepare dataset for FPRED")
     parser.add_argument("root", type=str, help="containing extracted subset folders and CSVFILES folder")
     parser.add_argument("output", type=str, help="outputfolder, subset folders will be created here")
-    parser.add_argument("--storage", type=str, help="raw should be faster", choices = ["memmap", "raw"], default = "raw")
-    parser.add_argument("--augmentation", type=str, help="data augmentation type", choices = ["dice", "nozflip", "none"], default = "none")
+    parser.add_argument("--storage", type=str, help="raw should be faster", choices = ["memmap", "raw"], default = "memmap")
+    parser.add_argument("--augmentation", type=str, help="data augmentation type", choices = ["fonova", "dice", "nozflip", "none"], default = "none")
     parser.add_argument("--voxelsize", type=float, help="desired size of voxel in mm for rescaling/normalization", default = 1.0)
     parser.add_argument("--cubesize", type=int, help="length, height and width of exported cubic sample in voxels", default = 36)
     parser.add_argument("--subsets", type=int, nargs="*", help="the subsets which should be processed", default = range(0, 10))
-    parser.add_argument("--shuffle", action="store_true", help="shuffle while storing the data, only possible with raw storage")
+    parser.add_argument("--shuffle", action="store_true", help="shuffle while storing the data")
     parser.add_argument("--preview", action="store_true", help="show a preview")
     parser.add_argument("--test", action="store_true", help="test with small candidates csv")
     main(parser.parse_args())
