@@ -1,22 +1,46 @@
 #!/usr/bin/env bash
 
-if [ "$#" -ne 1 ]; then
-    echo "usage: ./concat.sh output_file"
+function usage_and_exit() {
+    echo "usage: ./concat.sh output_folder output_file"
     echo "execute in a folder with output[0-9].csv"
     exit 1
+}
+
+function check_file() {
+    if [ ! -f "${1}" ]; then
+        echo "could not find file: ${1}"
+        echo ""
+        usage_and_exit
+    fi
+}
+
+function copy_header() {
+    check_file "${1}"
+    head -n 1 ${1} > ${2}
+}
+
+function copy_body() {
+    check_file "${1}"
+    tail -n +2 ${1} >> ${2}
+}
+
+
+if [ "$#" -ne 2 ]; then
+    usage_and_exit
 fi
 
-OUTPUT_FILE="$1"
+OUTPUT_FOLDER="$1"
+OUTPUT_FILE="$2"
 
-head -n 1 output0.csv > ${OUTPUT_FILE}
+copy_header "${OUTPUT_FOLDER}/output0.csv" "${OUTPUT_FOLDER}/${OUTPUT_FILE}"
 
-tail -n +2 output0.csv >> ${OUTPUT_FILE}
-tail -n +2 output1.csv >> ${OUTPUT_FILE}
-tail -n +2 output2.csv >> ${OUTPUT_FILE}
-tail -n +2 output3.csv >> ${OUTPUT_FILE}
-tail -n +2 output4.csv >> ${OUTPUT_FILE}
-tail -n +2 output5.csv >> ${OUTPUT_FILE}
-tail -n +2 output6.csv >> ${OUTPUT_FILE}
-tail -n +2 output7.csv >> ${OUTPUT_FILE}
-tail -n +2 output8.csv >> ${OUTPUT_FILE}
-tail -n +2 output9.csv >> ${OUTPUT_FILE}
+copy_body "${OUTPUT_FOLDER}/output0.csv" "${OUTPUT_FOLDER}/${OUTPUT_FILE}"
+copy_body "${OUTPUT_FOLDER}/output1.csv" "${OUTPUT_FOLDER}/${OUTPUT_FILE}"
+copy_body "${OUTPUT_FOLDER}/output2.csv" "${OUTPUT_FOLDER}/${OUTPUT_FILE}"
+copy_body "${OUTPUT_FOLDER}/output3.csv" "${OUTPUT_FOLDER}/${OUTPUT_FILE}"
+copy_body "${OUTPUT_FOLDER}/output4.csv" "${OUTPUT_FOLDER}/${OUTPUT_FILE}"
+copy_body "${OUTPUT_FOLDER}/output5.csv" "${OUTPUT_FOLDER}/${OUTPUT_FILE}"
+copy_body "${OUTPUT_FOLDER}/output6.csv" "${OUTPUT_FOLDER}/${OUTPUT_FILE}"
+copy_body "${OUTPUT_FOLDER}/output7.csv" "${OUTPUT_FOLDER}/${OUTPUT_FILE}"
+copy_body "${OUTPUT_FOLDER}/output8.csv" "${OUTPUT_FOLDER}/${OUTPUT_FILE}"
+copy_body "${OUTPUT_FOLDER}/output9.csv" "${OUTPUT_FOLDER}/${OUTPUT_FILE}"
