@@ -143,6 +143,7 @@ class CandidateGenerator(object):
     def generate_resized_scan(self, index):
         if self.current_resize_index == index:
             return
+        self.current_scan = None
 
         logging.debug("Generating resized scan for index %d" % index)
 
