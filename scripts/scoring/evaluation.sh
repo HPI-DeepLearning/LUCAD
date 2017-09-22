@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 function usage_and_exit() {
-    echo "usage: ./score.sh output_folder"
+    echo "usage: ./evaluation.sh output_folder"
     exit 1
 }
 
