@@ -1,11 +1,12 @@
 import argparse
 import os
 import sys
-import viewer.arrayviewer
 from preparation.candidate_generator import CandidateGenerator
 from storage.distributed_storage import DistributedStorage
 from storage.candidate_storage import CandidateStorage
 from util import helper
+
+import logging
 
 
 def export_subset(args, subset, candidates):
@@ -56,17 +57,17 @@ def export_subset(args, subset, candidates):
     positive = sum([(sum(1 if i['class'] == '1' else 0 for i in candidates[f]) if f in candidates else 0) for f in files])
     negative = sum([(sum(1 if i['class'] == '0' else 0 for i in candidates[f]) if f in candidates else 0) for f in files])
 
-    print "Augmentation factor for positive samples: %d" % augment_factor
-    print "Positive samples (original/augmented): %d / %d" % (positive, positive * augment_factor)
-    print "Negative samples (original/augmented): %d / %d" % (negative, negative)
+    logging.info("Augmentation factor for positive samples: %d" % augment_factor)
+    logging.info("Positive samples (original/augmented): %d / %d" % (positive, positive * augment_factor))
+    logging.info("Negative samples (original/augmented): %d / %d" % (negative, negative))
 
-    print "Creating storage..."
+    logging.info("Creating storage...")
     root = os.path.join(args.output, subset)
     with DistributedStorage(root, total, args.cubesize, shuffle = args.shuffle) if args.storage == "raw" else CandidateStorage(root, total, args.cubesize, shuffle = args.shuffle) as storage:
         generator.set_candidate_storage(storage)
         generator.store_info({"augmentation": args.augmentation, "total": total, "original": original, "files": files, "args": args})
 
-        print "Exporting %s with %d (%.2f%% original) candidates..." % (subset, total, float(original) / total * 100)
+        logging.info("Exporting %s with %d (%.2f%% original) candidates..." % (subset, total, float(original) / total * 100))
         loading_bar = helper.SimpleLoadingBar("Exporting", total)
 
         for current_file in files:
@@ -75,8 +76,10 @@ def export_subset(args, subset, candidates):
 
             scan, origin, spacing = helper.load_itk(os.path.join(args.root, subset, current_file + ".mhd"))
 
+            logging.debug("Setting scan of file %s with shape %s, origin %s, spacing %s" % (current_file, scan.shape, origin, spacing))
             generator.set_scan(scan, origin, spacing, args.voxelsize, current_file)
 
+            logging.debug("Generating candidates of file %s" % current_file)
             generator.generate(candidates[current_file], args.cubesize, loading_bar, args.preview)
 
         generator.store_info({"augmentation": args.augmentation, "total": total, "original": original, "files": files, "args": args}, True)
@@ -92,6 +95,8 @@ def main(args):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level = logging.DEBUG, stream = sys.stdout)
+
     parser = argparse.ArgumentParser(description = "prepare dataset for FPRED")
     parser.add_argument("root", type=str, help="containing extracted subset folders and CSVFILES folder")
     parser.add_argument("output", type=str, help="outputfolder, subset folders will be created here")

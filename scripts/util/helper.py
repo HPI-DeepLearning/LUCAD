@@ -8,6 +8,7 @@ import csv
 import sys
 import time
 import subprocess
+import logging
 
 
 DTYPE = 'u1'
@@ -144,19 +145,19 @@ def read_info_file(filename):
 
 def rescale_patient_images(scan, spacing, target_voxel_mm, is_mask_image=False, verbose=False):
     if verbose:
-        print("Spacing: ", spacing)
-        print("Shape: ", scan.shape)
+        logging.info(("Spacing: %s" % spacing))
+        logging.info(("Shape: %s" % scan.shape))
 
-    # print "Resizing dim z"
+    # logging.info("Resizing dim z")
     resize_x = 1.0
     resize_y = float(spacing[0]) / float(target_voxel_mm)
     interpolation = cv2.INTER_NEAREST if is_mask_image else cv2.INTER_LINEAR
     res = cv2.resize(scan, dsize=None, fx=resize_x, fy=resize_y, interpolation=interpolation)  # opencv assumes y, x, channels umpy array, so y = z pfff
-    # print "Shape is now : ", res.shape
+    # logging.info( "Shape is now : ", res.shape)
 
     res = res.swapaxes(0, 2)
     res = res.swapaxes(0, 1)
-    # print "Shape: ", res.shape
+    # logging.info("Shape: ", res.shape)
     resize_y = float(spacing[1]) / float(target_voxel_mm)
     resize_x = float(spacing[2]) / float(target_voxel_mm)
 
@@ -180,7 +181,7 @@ def rescale_patient_images(scan, spacing, target_voxel_mm, is_mask_image=False, 
     res = res.swapaxes(2, 1)
 
     if verbose:
-        print("Shape after: ", res.shape)
+        logging.info(("Shape after: %s" % res.shape))
 
     return res
 
@@ -245,6 +246,8 @@ class SimpleLoadingBar(object):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level = logging.DEBUG)
+
     parser = argparse.ArgumentParser()
     parser.add_argument("root", type = str, help = "containing extracted subset folders and CSVFILES folder")
 

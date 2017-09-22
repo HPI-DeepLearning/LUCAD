@@ -1,9 +1,10 @@
 import math
-
 import numpy as np
-from viewer.arrayviewer import Array3DViewer
 
+from viewer.arrayviewer import Array3DViewer
 from util import helper
+
+import logging
 
 
 def show_preview(array, origin, spacing, name = "Preview"):
@@ -39,14 +40,19 @@ class CandidateGenerator(object):
         self.translate_limits = translate_limits
         self.normalization = normalization
 
-        self.scans = []
-        self.spacings = []
-        self.identity_resize = -1
+        self.current_scan = None
+        self.current_spacing = None
+        self.current_resize_index = -1
+        for i, size in enumerate(self.resize):
+            if abs(size - 1.0) < 0.01:
+                self.identity_resize = i
 
         self.name = ""
         self.original_scan = None
         self.origin = None
         self.original_spacing = None
+        self.voxel_size = None
+
         self.storage = None
 
         self.augment_class = augment_class
@@ -68,20 +74,7 @@ class CandidateGenerator(object):
         self.original_scan = scan
         self.origin = origin
         self.original_spacing = spacing
-
-        self.create_resized_scans(voxel_size)
-
-    def create_resized_scans(self, base_voxel_size):
-        self.scans = []
-        self.spacings = []
-        for i, size in enumerate(self.resize):
-            voxel_size = size * base_voxel_size
-            rescaled = helper.rescale_patient_images(self.original_scan, self.original_spacing, voxel_size)
-            self.spacings.append(np.asarray([voxel_size, voxel_size, voxel_size]))
-            self.scans.append(helper.normalize_to_grayscale(rescaled, type = self.normalization).astype(helper.DTYPE))
-
-            if abs(size - 1.0) < 0.01:
-                self.identity_resize = i
+        self.voxel_size = voxel_size
 
     def set_candidate_storage(self, storage):
         self.storage = storage
@@ -96,7 +89,6 @@ class CandidateGenerator(object):
         if self.rotate == "dice":
             side = rotate_index / 4
             k = rotate_index % 4
-            print side, k
 
             # First turn to each side of a 'dice', 0 is original
             #   4
@@ -126,33 +118,47 @@ class CandidateGenerator(object):
                 t_list[-1][2] = 0
         return t_list
 
-    def generate_augmented_candidates(self, c, cube_size, cube_size_arr, preview):
+    def generate_options(self, i):
+        all_options = []
         translation_list = self.generate_translations(max(self.translations, self.factor))
         if self.factor > 0:
             for k in range(0, self.factor):
                 t = translation_list[k]
-                i = self.__rng.randint(0, len(self.resize))
+                r_i = self.__rng.randint(0, len(self.resize))
                 f = self.__rng.choice(self.flip)
                 r = self.__rng.randint(0, self.get_rotation_variants())
-                options = {"resize_index": i, "translation": t, "flip_axis": f, "rotate_index": r}
-                data, label = self.generate_single_candidate(c, cube_size, cube_size_arr, **options)
-                self.store_candidate(data, label, preview, i)
-            return self.get_augment_factor()
-        for t in translation_list:
-            for i in range(0, len(self.resize)):
-                for f in self.flip:
-                    for r in range(0, self.get_rotation_variants()):
-                        options = {"resize_index": i, "translation": t, "flip_axis": f, "rotate_index": r}
-                        data, label = self.generate_single_candidate(c, cube_size, cube_size_arr, **options)
-                        self.store_candidate(data, label, preview, i)
-        return self.get_augment_factor()
+                all_options.append({"resize_index": r_i, "translation": t, "flip_axis": f, "rotate_index": r, "index": i, "augment": True})
+        else:
+            for t in translation_list:
+                for r_i in range(0, len(self.resize)):
+                    for f in self.flip:
+                        for r in range(0, self.get_rotation_variants()):
+                            all_options.append({"resize_index": r_i, "translation": t, "flip_axis": f, "rotate_index": r, "index": i, "augment": True})
+        return all_options
 
-    def store_candidate(self, data, label, preview, resize_index = -1):
-        if resize_index == -1:
-            resize_index = self.identity_resize
+    def generate_resized_scan(self, index):
+        if self.current_resize_index == index:
+            return
+
+        logging.debug("Generating resized scan for index %d" % index)
+
+        size = self.resize[index]
+        actual_voxel_size = size * self.voxel_size
+        rescaled = helper.rescale_patient_images(self.original_scan, self.original_spacing, actual_voxel_size)
+
+        self.current_resize_index = index
+        self.current_spacing = (np.asarray([actual_voxel_size, actual_voxel_size, actual_voxel_size]))
+        self.current_scan = (helper.normalize_to_grayscale(rescaled, type = self.normalization).astype(helper.DTYPE))
+
+    def store_candidate(self, data, label, preview):
         if preview:
-            show_preview(data, np.asarray((0., 0., 0.)), self.spacings[resize_index])
+            show_preview(data, np.asarray((0., 0., 0.)), self.current_spacing)
         self.storage.store_candidate(data, label)
+
+    def generate_augmented_candidate(self, c, cube_size, cube_size_arr, preview, options):
+        data, label = self.generate_single_candidate(c, cube_size, cube_size_arr, **options)
+        self.store_candidate(data, label, preview)
+        return 1
 
     def generate_candidate(self, c, cube_size, cube_size_arr, preview):
         data, label = self.generate_single_candidate(c, cube_size, cube_size_arr)
@@ -160,21 +166,21 @@ class CandidateGenerator(object):
         return 1
 
     def generate_single_candidate(self, c, cube_size, cube_size_arr, resize_index = -1, translation = None,
-                                  flip_axis = "", rotate_index = 0):
+                                  flip_axis = "", rotate_index = 0, **kwargs):
         if resize_index == -1:
             resize_index = self.identity_resize
 
         candidate_coords = np.asarray((float(c['coordZ']), float(c['coordY']), float(c['coordX'])))
         if translation is not None and self.translate == "before":
             candidate_coords += translation
-        voxel_coords = np.round(helper.world_to_voxel(candidate_coords, self.origin, self.spacings[resize_index]))
+        voxel_coords = np.round(helper.world_to_voxel(candidate_coords, self.origin, self.current_spacing))
         if translation is not None and self.translate == "after":
             voxel_coords += translation
 
         z0, y0, x0 = sanitize_coords(voxel_coords - (cube_size_arr / 2), 0)
         z1, y1, x1 = sanitize_coords(voxel_coords + (cube_size_arr / 2), 0)
 
-        candidate_roi = self.scans[resize_index][z0:z1, y0:y1, x0:x1]
+        candidate_roi = self.current_scan[z0:z1, y0:y1, x0:x1]
 
         info = [resize_index, z0, y0, x0, z1, y1, x1]
         assert_debug(min(candidate_roi.shape) > 0, self.show_debug_info, info)
@@ -198,16 +204,25 @@ class CandidateGenerator(object):
         return data, int(c['class'])
 
     def show_debug_info(self, info):
-        print self.name
-        print info
-        show_preview(self.scans[info[0]], self.origin, self.spacings[info[0]], "Error on this scan!")
+        logging.error("Error on this scan: %s, info: %s" % (self.name, info))
+        show_preview(self.current_scan, self.origin, self.current_spacing, "Error on this scan!")
 
     def generate(self, candidates, cube_size, loading_bar = None, preview = False):
         cube_size_arr = np.asarray((cube_size, cube_size, cube_size))
 
-        for c in candidates:
+        all_candidates = []
+        for i, c in enumerate(candidates):
             if c['class'] == self.augment_class:
-                candidates_generated = self.generate_augmented_candidates(c, cube_size, cube_size_arr, preview)
+                all_candidates += self.generate_options(i)
+            else:
+                all_candidates.append({"index": i, "augment": False, "resize_index": self.identity_resize})
+        all_candidates.sort(key = lambda x: x["resize_index"])
+
+        for options in all_candidates:
+            self.generate_resized_scan(options["resize_index"])
+            c = candidates[options["index"]]
+            if options["augment"]:
+                candidates_generated = self.generate_augmented_candidate(c, cube_size, cube_size_arr, preview, options)
             else:
                 candidates_generated = self.generate_candidate(c, cube_size, cube_size_arr, preview)
 
