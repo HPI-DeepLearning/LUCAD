@@ -42,7 +42,7 @@ if __name__ == '__main__':
     parser.set_defaults(
         # network
         network        = 'mlp',
-        num_layers     = 15, # this variable only needed by ResNet
+        num_layers     = 18, # this variable only needed by ResNet
 
         # data
         num_classes      = 2,
