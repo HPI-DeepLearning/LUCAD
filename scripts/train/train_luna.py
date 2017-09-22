@@ -27,8 +27,11 @@ if __name__ == '__main__':
     parser.add_argument('--log', dest='log_file', type=str, default="train.log",
                     help='save training log to file')
 
-    parser.add_argument('--data_root', type=str,
-                    help='path to all data subsets')
+    parser.add_argument('--train-data-root', type=str,
+                    help='path to train data subsets')
+
+    parser.add_argument('--val-data-root', type=str,
+                    help='path to val data subsets')
 
     parser.add_argument('--train_subsets', type=str,
                     help='Subsets for training')
@@ -76,8 +79,8 @@ if __name__ == '__main__':
     train_subsets = [int(k) for k in args.train_subsets.split(',')]
     validation_subsets = [int(k) for k in args.val_subsets.split(',')]
 
-    train_iter = get_iterator(args.data_root, train_subsets, batch_size = args.batch_size, shuffle = True)
-    val_iter = get_iterator(args.data_root, validation_subsets, batch_size = args.batch_size)
+    train_iter = get_iterator(args.train_data_root, train_subsets, batch_size = args.batch_size, shuffle = True)
+    val_iter = get_iterator(args.val_data_root, validation_subsets, batch_size = args.batch_size)
     args.num_examples = train_iter.total_size()
 
     # load network
