@@ -113,17 +113,17 @@ class CandidateGenerator(object):
             final = np.rot90(rotated, k, axes = (1, 2))
             return final
 
-    def generate_translations(self):
+    def generate_translations(self, num):
         t_list = []
         for i in range(0, self.translations):
             t_list.append(self.__rng.randint(self.translate_limits[0], self.translate_limits[1] + 1, size = (3,)))
         return t_list
 
     def generate_augmented_candidates(self, c, cube_size, cube_size_arr, preview):
-        translation_list = self.generate_translations()
+        translation_list = self.generate_translations(max(self.translations, self.factor))
         if self.factor > 0:
-            for _ in range(0, self.factor):
-                t = self.__rng.choice(translation_list)
+            for k in range(0, self.factor):
+                t = translation_list[k]
                 i = self.__rng.randint(0, len(self.resize))
                 f = self.__rng.choice(self.flip)
                 r = self.__rng.randint(0, self.get_rotation_variants())
@@ -174,6 +174,9 @@ class CandidateGenerator(object):
 
         padding = [(int(math.ceil(p / 2.0)), int(p / 2.0)) for p in (cube_size_arr - candidate_roi.shape)]
         data = np.pad(candidate_roi, padding, 'constant', constant_values = (0,))
+
+        if flip_axis == "" and rotate_index == 0:
+            return data, int(c['class'])
 
         if flip_axis == "":
             data = self.augment_with_rotation(data, rotate_index)

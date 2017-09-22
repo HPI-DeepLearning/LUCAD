@@ -50,6 +50,13 @@ def export_subset(args, subset, candidates):
     if total == 0:
         return
 
+    positive = sum([(sum(1 if i['class'] == '1' else 0 for i in candidates[f]) if f in candidates else 0) for f in files])
+    negative = sum([(sum(1 if i['class'] == '0' else 0 for i in candidates[f]) if f in candidates else 0) for f in files])
+
+    print "Augmentation factor for positive samples: %d" % augment_factor
+    print "Positive samples (original/augmented): %d / %d" % (positive, positive * augment_factor)
+    print "Negative samples (original/augmented): %d / %d" % (negative, negative)
+
     print "Creating storage..."
     root = os.path.join(args.output, subset)
     with DistributedStorage(root, total, args.cubesize, shuffle = args.shuffle) if args.storage == "raw" else CandidateStorage(root, total, args.cubesize, shuffle = args.shuffle) as storage:
