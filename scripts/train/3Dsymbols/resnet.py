@@ -146,7 +146,10 @@ def get_symbol(num_classes, num_layers, image_shape, conv_workspace=256, **kwarg
             filter_list = [64, 64, 128, 256, 512]
             bottle_neck = False
         num_stages = 4
-        if num_layers == 18:
+        if num_layers < 18:
+            num_stages = 3
+            units = [2, 2, 2]
+        elif num_layers == 18:
             units = [2, 2, 2, 2]
         elif num_layers == 34:
             units = [3, 4, 6, 3]

@@ -39,7 +39,7 @@ if __name__ == '__main__':
     parser.set_defaults(
         # network
         network        = 'mlp',
-        num_layers     = 18, # this variable only needed by ResNet
+        num_layers     = 15, # this variable only needed by ResNet
 
         # data
         num_classes      = 2,
@@ -50,7 +50,7 @@ if __name__ == '__main__':
         # train
         num_epochs       = 5,
         lr_step_epochs   = '1,2,3,4',
-        lr               = 0.1,
+        lr               = 0.01,
         lr_factor        = 0.5,
         batch_size       = 30,
         optimizer        = 'sgd',
