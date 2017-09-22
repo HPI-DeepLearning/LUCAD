@@ -18,7 +18,13 @@ def now():
 
 
 def git_hash():
-    return subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()
+    try:
+        return subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()
+    except subprocess.CalledProcessError as E:
+        if E.returncode == 128:
+            return "headless"
+        else:
+            raise E
 
 
 def load_itk(filename):
@@ -68,12 +74,16 @@ def voxel_to_world(coords, origin, spacing):
     return spacing * coords + origin
 
 
-def normalize_to_grayscale(arr, factor = 255):
-    maxHU = 400.
-    minHU = -1000.
+def normalize_to_grayscale(arr, factor = 255, type = "default"):
+    if type == "default":
+        minHU, maxHU = -1000., 400.
+        minTo, maxTo = 0., 1.
+    elif type == "fonova":
+        minHU, maxHU = -1000., 1000.
+        minTo, maxTo = 1., 1.
     data = (arr - minHU) / (maxHU - minHU)
-    data[data > 1] = 1.
-    data[data < 0] = 0.
+    data[data > 1] = maxTo
+    data[data < 0] = minTo
     return data * factor
 
 

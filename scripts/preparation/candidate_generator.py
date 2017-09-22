@@ -28,7 +28,7 @@ def assert_debug(boolean, callback, data):
 
 class CandidateGenerator(object):
     def __init__(self, flip = ("",), resize = (1.0,), rotate = "none", translations = 1, translate_limits = (0, 0),
-                 augment_class = "1", translate = "before", translate_axes = "", factor = 0):
+                 augment_class = "1", translate = "before", translate_axes = "", factor = 0, normalization = "default"):
         self.flip = flip
         self.resize = resize
         self.rotate = rotate
@@ -37,6 +37,7 @@ class CandidateGenerator(object):
         self.translate_axes = translate_axes
         self.factor = factor
         self.translate_limits = translate_limits
+        self.normalization = normalization
 
         self.scans = []
         self.spacings = []
@@ -77,7 +78,7 @@ class CandidateGenerator(object):
             voxel_size = size * base_voxel_size
             rescaled = helper.rescale_patient_images(self.original_scan, self.original_spacing, voxel_size)
             self.spacings.append(np.asarray([voxel_size, voxel_size, voxel_size]))
-            self.scans.append(helper.normalize_to_grayscale(rescaled).astype(helper.DTYPE))
+            self.scans.append(helper.normalize_to_grayscale(rescaled, type = self.normalization).astype(helper.DTYPE))
 
             if abs(size - 1.0) < 0.01:
                 self.identity_resize = i
@@ -115,8 +116,14 @@ class CandidateGenerator(object):
 
     def generate_translations(self, num):
         t_list = []
-        for i in range(0, self.translations):
+        for i in range(0, num):
             t_list.append(self.__rng.randint(self.translate_limits[0], self.translate_limits[1] + 1, size = (3,)))
+            if "z" not in self.translate_axes:
+                t_list[-1][0] = 0
+            if "y" not in self.translate_axes:
+                t_list[-1][1] = 0
+            if "x" not in self.translate_axes:
+                t_list[-1][2] = 0
         return t_list
 
     def generate_augmented_candidates(self, c, cube_size, cube_size_arr, preview):
@@ -130,6 +137,7 @@ class CandidateGenerator(object):
                 options = {"resize_index": i, "translation": t, "flip_axis": f, "rotate_index": r}
                 data, label = self.generate_single_candidate(c, cube_size, cube_size_arr, **options)
                 self.store_candidate(data, label, preview, i)
+            return self.get_augment_factor()
         for t in translation_list:
             for i in range(0, len(self.resize)):
                 for f in self.flip:
@@ -161,7 +169,7 @@ class CandidateGenerator(object):
             candidate_coords += translation
         voxel_coords = np.round(helper.world_to_voxel(candidate_coords, self.origin, self.spacings[resize_index]))
         if translation is not None and self.translate == "after":
-            candidate_coords += translation
+            voxel_coords += translation
 
         z0, y0, x0 = sanitize_coords(voxel_coords - (cube_size_arr / 2), 0)
         z1, y1, x1 = sanitize_coords(voxel_coords + (cube_size_arr / 2), 0)
