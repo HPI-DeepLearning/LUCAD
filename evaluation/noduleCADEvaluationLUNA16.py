@@ -2,7 +2,10 @@ import os
 import math
 import sys
 
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+
 from matplotlib.ticker import ScalarFormatter,LogFormatter,StrMethodFormatter,FixedFormatter
 import sklearn.metrics as skl_metrics
 import numpy as np
