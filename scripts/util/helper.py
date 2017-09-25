@@ -8,6 +8,7 @@ import csv
 import sys
 import time
 import subprocess
+import logging
 
 
 DTYPE = 'u1'
@@ -18,7 +19,13 @@ def now():
 
 
 def git_hash():
-    return subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()
+    try:
+        return subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()
+    except subprocess.CalledProcessError as E:
+        if E.returncode == 128:
+            return "headless"
+        else:
+            raise E
 
 
 def load_itk(filename):
@@ -68,12 +75,16 @@ def voxel_to_world(coords, origin, spacing):
     return spacing * coords + origin
 
 
-def normalize_to_grayscale(arr, factor = 255):
-    maxHU = 400.
-    minHU = -1000.
+def normalize_to_grayscale(arr, factor = 255, type = "default"):
+    if type == "default":
+        minHU, maxHU = -1000., 400.
+        minTo, maxTo = 0., 1.
+    elif type == "fonova":
+        minHU, maxHU = -1000., 1000.
+        minTo, maxTo = 1., 1.
     data = (arr - minHU) / (maxHU - minHU)
-    data[data > 1] = 1.
-    data[data < 0] = 0.
+    data[data > 1] = maxTo
+    data[data < 0] = minTo
     return data * factor
 
 
@@ -134,19 +145,19 @@ def read_info_file(filename):
 
 def rescale_patient_images(scan, spacing, target_voxel_mm, is_mask_image=False, verbose=False):
     if verbose:
-        print("Spacing: ", spacing)
-        print("Shape: ", scan.shape)
+        logging.info(("Spacing: %s" % spacing))
+        logging.info(("Shape: %s" % scan.shape))
 
-    # print "Resizing dim z"
+    # logging.info("Resizing dim z")
     resize_x = 1.0
     resize_y = float(spacing[0]) / float(target_voxel_mm)
     interpolation = cv2.INTER_NEAREST if is_mask_image else cv2.INTER_LINEAR
     res = cv2.resize(scan, dsize=None, fx=resize_x, fy=resize_y, interpolation=interpolation)  # opencv assumes y, x, channels umpy array, so y = z pfff
-    # print "Shape is now : ", res.shape
+    # logging.info( "Shape is now : ", res.shape)
 
     res = res.swapaxes(0, 2)
     res = res.swapaxes(0, 1)
-    # print "Shape: ", res.shape
+    # logging.info("Shape: ", res.shape)
     resize_y = float(spacing[1]) / float(target_voxel_mm)
     resize_x = float(spacing[2]) / float(target_voxel_mm)
 
@@ -161,7 +172,7 @@ def rescale_patient_images(scan, spacing, target_voxel_mm, is_mask_image=False, 
         res2 = cv2.resize(res2, dsize=None, fx=resize_x, fy=resize_y, interpolation=interpolation)
         res1 = res1.swapaxes(0, 2)
         res2 = res2.swapaxes(0, 2)
-        res = numpy.vstack([res1, res2])
+        res = np.vstack([res1, res2])
         res = res.swapaxes(0, 2)
     else:
         res = cv2.resize(res, dsize=None, fx=resize_x, fy=resize_y, interpolation=interpolation)
@@ -170,7 +181,7 @@ def rescale_patient_images(scan, spacing, target_voxel_mm, is_mask_image=False, 
     res = res.swapaxes(2, 1)
 
     if verbose:
-        print("Shape after: ", res.shape)
+        logging.info(("Shape after: %s" % res.shape))
 
     return res
 
@@ -235,6 +246,8 @@ class SimpleLoadingBar(object):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level = logging.DEBUG)
+
     parser = argparse.ArgumentParser()
     parser.add_argument("root", type = str, help = "containing extracted subset folders and CSVFILES folder")
 

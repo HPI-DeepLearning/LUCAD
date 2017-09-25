@@ -1,8 +1,9 @@
 import os
-
 import numpy as np
 
 from util import helper
+
+import logging
 
 
 class CandidateStorage(object):
