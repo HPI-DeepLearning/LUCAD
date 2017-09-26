@@ -44,7 +44,7 @@ def get_symbol(num_classes, **kwargs):
     pool3 = mx.symbol.Pooling(
         data=relu3b, pool_type="max", kernel=(2, 2, 2), stride=(2, 2, 2))
 
-    dropout1 = symbol.Dropout(pool3, p = 0.5)
+    dropout1 = mx.symbol.Dropout(pool3, p = 0.5)
 
     # stage 4
     conv4a = mx.symbol.Convolution(
@@ -59,7 +59,7 @@ def get_symbol(num_classes, **kwargs):
     pool4 = mx.symbol.Pooling(
         data=relu4b, pool_type="max", kernel=(2, 2, 2), stride=(2, 2, 2))
 
-    dropout2 = symbol.Dropout(pool4, p = 0.5)
+    dropout2 = mx.symbol.Dropout(pool4, p = 0.5)
 
     # stage 5
     conv5 = mx.symbol.Convolution(
@@ -67,11 +67,11 @@ def get_symbol(num_classes, **kwargs):
     bn5 = mx.sym.BatchNorm(data=conv5, fix_gamma=fix_gamma, eps=eps, momentum=bn_mom)
     relu5 = mx.symbol.LeakyReLU(data=bn5, act_type="leaky")
 
-    dropout3 = symbol.Dropout(relu5, p = 0.5)
+    dropout3 = mx.symbol.Dropout(relu5, p = 0.5)
 
     # stage 6
     flatten = mx.symbol.Flatten(data=dropout3)
     fc1 = mx.symbol.FullyConnected(data=flatten, num_hidden=num_classes)
-    softmax = mx.symbol.SVMOutput(data=fc1, name='svm')
+    softmax = mx.symbol.SVMOutput(data=fc1, name='softmax')
 
     return softmax
