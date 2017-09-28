@@ -72,7 +72,7 @@ def get_symbol(class_weights, **kwargs):
 
     # stage 6
     flatten = mx.symbol.Flatten(data=dropout3)
-    fc1 = mx.symbol.FullyConnected(data=flatten, num_hidden=1)
+    fc1 = mx.symbol.FullyConnected(data=flatten, num_hidden=1, name="fc_pred")
 
     # stage 7 create weighted loss for binary classification
     label = mx.symbol.Variable('softmax_label')
