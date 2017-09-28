@@ -38,6 +38,9 @@ if __name__ == '__main__':
 
     parser.add_argument('--val_subsets', type=str,
                     help='Subsets for validation')
+
+    parser.add_argument('--class-weights', type=str, default="1,1",
+                help='weights for "positive (1 as label)" and negative class respectively. E.g.: 2.0,1.0')
     
     parser.set_defaults(
         # network
