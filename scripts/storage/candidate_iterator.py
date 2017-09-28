@@ -91,7 +91,7 @@ class CandidateIter(mx.io.DataIter):
                 self.current_file += 1
                 continue
 
-            logging.debug("Create new NDArrayIter, %s - %d:%d" % (self.data_files[self.current_file], start, end))
+            # logging.debug("Create new NDArrayIter, %s - %d:%d" % (self.data_files[self.current_file], start, end))
             self.__iterator = mx.io.NDArrayIter(data = data[start:end, :, :, :, :], label = labels[start:end],
                                                 batch_size = self.batch_size, shuffle = self.needs_shuffling,
                                                 data_name = self.data_name, label_name = self.label_name)

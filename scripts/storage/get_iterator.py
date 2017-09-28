@@ -26,16 +26,18 @@ def main(args):
     print "Data layout: %s" % data_iter.provide_data[0].layout
     print "Data shape: %s" % str(data_iter.provide_data[0].shape)
 
+    measure_chunks = 10
+
     i = 0
     for batch in data_iter:
         if i == 0:
             print "Batch shape: %s" % ",".join([str(x) for x in batch.data[0].shape])
-        if i % 100 == 99:
+        if i % measure_chunks == (measure_chunks - 1):
             prev_chunk = chunk_start
             chunk_start = time.time()
             chunk = chunk_start - prev_chunk
-            avg = (chunk_start - start) / ((i+1)/100.0)
-            print "Batch %d (%.2f, total avg: %.2f sec / 100 batch)!" % (i + 1, chunk, avg)
+            avg = (chunk_start - start) / ((i+1) / float(measure_chunks))
+            print "Batch %d (%.2f, total avg: %.2f sec / %d batch)!" % (i + 1, chunk, avg, measure_chunks)
         assert len(batch.data[0]) == 30
         assert len(batch.label[0]) == 30
         i += 1
