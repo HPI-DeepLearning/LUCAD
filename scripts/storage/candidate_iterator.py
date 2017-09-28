@@ -11,7 +11,23 @@ import numpy as np
 from util import helper
 
 
-class CandidateIter(mx.io.DataIter):
+class CandidateIter(mx.io.PrefetchingIter):
+    def __init__(self, root, subsets, batch_size = 1, shuffle = False, chunk_size = 100, data_name = 'data', label_name = 'softmax_label'):
+        self.__inner_iter = InnerIter(root, subsets, batch_size = batch_size, shuffle = shuffle,
+                                      chunk_size = 1, data_name = data_name, label_name = label_name)
+        super(CandidateIter, self).__init__(self.__inner_iter)
+
+    def get_info(self):
+        return self.__inner_iter.get_info()
+
+    def sizes(self):
+        return self.__inner_iter.sizes()
+
+    def total_size(self):
+        return self.__inner_iter.total_size()
+
+
+class InnerIter(mx.io.DataIter):
     def __init__(self, root, subsets, batch_size = 1, shuffle = False, chunk_size = 100, data_name = 'data', label_name = 'softmax_label'):
         self.data_files = []
         self.label_files = []
