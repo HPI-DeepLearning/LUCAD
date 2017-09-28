@@ -88,7 +88,7 @@ def normalize_to_grayscale(arr, factor = 255, type = "default"):
     return data * factor
 
 
-def check_and_combine(info_files, check = ("rotate", "flip", "sample_shape", "translate", "type", "resize", "revision")):
+def check_and_combine(info_files, check = ("rotate", "flip", "sample_shape", "translate", "type", "resize", "revision", "shuffled")):
     if len(info_files) == 1:
         return info_files[info_files.keys()[0]]
 
