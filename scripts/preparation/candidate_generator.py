@@ -125,6 +125,7 @@ class CandidateGenerator(object):
     def generate_options(self, i):
         all_options = []
         translation_list = self.generate_translations(max(self.translations, self.factor))
+        logging.debug("Translation list: %s" % str(translation_list))
         if self.factor > 0:
             for k in range(0, self.factor):
                 t = translation_list[k]
@@ -155,7 +156,7 @@ class CandidateGenerator(object):
         self.current_spacing = (np.asarray([actual_voxel_size, actual_voxel_size, actual_voxel_size]))
 
     def store_candidate(self, data, label, preview):
-        if preview:
+        if preview and label > 0.5:
             show_preview(data, np.asarray((0., 0., 0.)), self.current_spacing)
         self.storage.store_candidate(data, label)
 

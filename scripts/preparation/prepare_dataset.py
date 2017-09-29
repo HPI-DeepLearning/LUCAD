@@ -42,6 +42,16 @@ def export_subset(args, subset, candidates):
             factor = 7 if args.factor == 0 else args.factor,
             normalization = "fonova"
         )
+    elif args.augmentation == "kok":
+        generator = CandidateGenerator(
+            flip = ("", "x", "y"),
+            rotate = "xy",
+            translate_limits = (-1, 1),
+            translate = "after",
+            translations = 3,
+            translate_axes = "xyz",
+            factor = args.factor
+        )
     elif args.augmentation == "none":
         generator = CandidateGenerator()
 
@@ -113,7 +123,7 @@ if __name__ == "__main__":
     parser.add_argument("root", type=str, help="containing extracted subset folders and CSVFILES folder")
     parser.add_argument("output", type=str, help="outputfolder, subset folders will be created here")
     parser.add_argument("--storage", type=str, help="raw should be faster", choices = ["memmap", "raw"], default = "memmap")
-    parser.add_argument("--augmentation", type=str, help="data augmentation type", choices = ["fonova", "dice", "nozflip", "none"], default = "none")
+    parser.add_argument("--augmentation", type=str, help="data augmentation type", choices = ["fonova", "dice", "nozflip", "kok", "none"], default = "none")
     parser.add_argument("--voxelsize", type=float, help="desired size of voxel in mm for rescaling/normalization", default = 1.0)
     parser.add_argument("--ratio", type=float, help="[N]egatives:[P]ositives ratio (N:P = r:1), negatives will be downsampled", default = -1, metavar="r")
     parser.add_argument("--factor", type=int, help="create a fixed number of random augmentation instead of all", default = 0)
