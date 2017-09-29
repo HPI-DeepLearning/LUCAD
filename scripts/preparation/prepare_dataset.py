@@ -24,6 +24,15 @@ def export_subset(args, subset, candidates):
             factor = args.factor,
             translations = 4
         )
+    elif args.augmentation == "xy":
+        generator = CandidateGenerator(
+            resize = (0.85, 0.875, 0.9, 0.925, 0.95, 0.975, 1.0, 1.025, 1.05, 1.075, 1.1, 1.125, 1.15),
+            rotate = "xy",
+            translate_limits = (-2, 2),
+            translate = "after",
+            translate_axes = "xy",
+            factor = 10 if args.factor == 0 else args.factor
+        )
     elif args.augmentation == "dice":
         generator = CandidateGenerator(
             flip = ("", "x", "y"),
@@ -123,7 +132,7 @@ if __name__ == "__main__":
     parser.add_argument("root", type=str, help="containing extracted subset folders and CSVFILES folder")
     parser.add_argument("output", type=str, help="outputfolder, subset folders will be created here")
     parser.add_argument("--storage", type=str, help="raw should be faster", choices = ["memmap", "raw"], default = "memmap")
-    parser.add_argument("--augmentation", type=str, help="data augmentation type", choices = ["fonova", "dice", "nozflip", "kok", "none"], default = "none")
+    parser.add_argument("--augmentation", type=str, help="data augmentation type", choices = ["fonova", "dice", "nozflip", "kok", "xy", "none"], default = "none")
     parser.add_argument("--voxelsize", type=float, help="desired size of voxel in mm for rescaling/normalization", default = 1.0)
     parser.add_argument("--ratio", type=float, help="[N]egatives:[P]ositives ratio (N:P = r:1), negatives will be downsampled", default = -1, metavar="r")
     parser.add_argument("--factor", type=int, help="create a fixed number of random augmentation instead of all", default = 0)
