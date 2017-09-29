@@ -11,7 +11,7 @@ def padded_format(i, maximum):
 
 
 class DistributedStorage(object):
-    def __init__(self, root, n, cube_size, shuffle = True, parts = 10):
+    def __init__(self, root, n, cube_size, neg, neg_d, shuffle = True, parts = 10):
         self.root = root
         self.n = n
         self.index = 0

@@ -144,8 +144,8 @@ def read_info_file(filename):
 
 
 def rescale_patient_images(scan, spacing, target_voxel_mm, is_mask_image=False, verbose=False):
-    logging.debug(("Spacing: %s" % spacing))
-    logging.debug(("Shape: %s" % str(scan.shape)))
+    # logging.debug(("Spacing: %s" % spacing))
+    # logging.debug(("Shape: %s" % str(scan.shape)))
 
     # logging.info("Resizing dim z")
     resize_x = 1.0
@@ -179,7 +179,7 @@ def rescale_patient_images(scan, spacing, target_voxel_mm, is_mask_image=False, 
     res = res.swapaxes(0, 2)
     res = res.swapaxes(2, 1)
 
-    logging.debug(("Shape after: %s" % str(res.shape)))
+    # logging.debug(("Shape after: %s" % str(res.shape)))
 
     return res
 

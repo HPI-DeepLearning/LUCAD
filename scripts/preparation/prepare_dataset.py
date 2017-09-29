@@ -48,26 +48,38 @@ def export_subset(args, subset, candidates):
     assert generator is not None, "bad augmentation method"
     augment_factor = generator.get_augment_factor()
 
-    total = sum([(sum(augment_factor if i['class'] == '1' else 1 for i in candidates[f]) if f in candidates else 0) for f in files])
     original = sum([(len(candidates[f]) if f in candidates else 0) for f in files])
-
-    if total == 0:
-        return
 
     positive = sum([(sum(1 if i['class'] == '1' else 0 for i in candidates[f]) if f in candidates else 0) for f in files])
     negative = sum([(sum(1 if i['class'] == '0' else 0 for i in candidates[f]) if f in candidates else 0) for f in files])
 
+    positive_augmented = positive * augment_factor
+    if args.ratio > 0:
+        if positive_augmented == 0 and negative > 0:
+            logging.warning("Only negative samples in data set and no positive samples, with ratio %d set!" % args.ratio)
+            logging.warning("This means none of the negative samples will be written for %s." % subset)
+        negatives_downsampled = min(negative, int(round(positive_augmented * args.ratio)))
+    else:
+        negatives_downsampled = negative
+
+    total = positive_augmented + negatives_downsampled
+
+    if total == 0:
+        return
+
     logging.info("Augmentation factor for positive samples: %d" % augment_factor)
     logging.info("Positive samples (original/augmented): %d / %d" % (positive, positive * augment_factor))
-    logging.info("Negative samples (original/augmented): %d / %d" % (negative, negative))
+    logging.info("Downsampling ratio for negative samples: %d" % args.ratio)
+    logging.info("Negative samples (original/downsampled): %d / %d" % (negative, negatives_downsampled))
 
-    logging.info("Creating storage...")
     root = os.path.join(args.output, subset)
-    with DistributedStorage(root, total, args.cubesize, shuffle = args.shuffle) if args.storage == "raw" else CandidateStorage(root, total, args.cubesize, shuffle = args.shuffle) as storage:
+    args_ = [root, total, args.cubesize, negative, negatives_downsampled]
+    kwargs = {"shuffle": args.shuffle}
+    with DistributedStorage(*args_, **kwargs) if args.storage == "raw" else CandidateStorage(*args_, **kwargs) as storage:
         generator.set_candidate_storage(storage)
         generator.store_info({"augmentation": args.augmentation, "total": total, "original": original, "files": files, "args": args})
 
-        logging.info("Exporting %s with %d (%.2f%% original) candidates..." % (subset, total, float(original) / total * 100))
+        logging.info("Exporting %s..." % subset)
         loading_bar = helper.SimpleLoadingBar("Exporting", total)
 
         for current_file in files:
@@ -103,6 +115,7 @@ if __name__ == "__main__":
     parser.add_argument("--storage", type=str, help="raw should be faster", choices = ["memmap", "raw"], default = "memmap")
     parser.add_argument("--augmentation", type=str, help="data augmentation type", choices = ["fonova", "dice", "nozflip", "none"], default = "none")
     parser.add_argument("--voxelsize", type=float, help="desired size of voxel in mm for rescaling/normalization", default = 1.0)
+    parser.add_argument("--ratio", type=float, help="[N]egatives:[P]ositives ratio (N:P = r:1), negatives will be downsampled", default = -1, metavar="r")
     parser.add_argument("--factor", type=int, help="create a fixed number of random augmentation instead of all", default = 0)
     parser.add_argument("--cubesize", type=int, help="length, height and width of exported cubic sample in voxels", default = 36)
     parser.add_argument("--subsets", type=int, nargs="*", help="the subsets which should be processed", default = range(0, 10))
