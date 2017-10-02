@@ -82,8 +82,9 @@ def get_symbol(class_weights,num_classes, **kwargs):
     #label = mx.sym.Custom(data=label, op_type='debug')
 
     prob = mx.symbol.softmax(data=fc1, name="probability")
+    #prob = mx.sym.Custom(data=prob, op_type='debug')
     loss = wbc_loss(prob=prob, label=label, cl_weights = get_class_weights(class_weights))
-    #loss = mx.sym.Custom(data=loss, op_type='debug')
+    
 
     #pred_loss = mx.symbol.Group([mx.symbol.BlockGrad(out), loss])
     #arg_shape, output_shape, aux_shape = out.infer_shape(data=(5, 1, 36,36,36))
