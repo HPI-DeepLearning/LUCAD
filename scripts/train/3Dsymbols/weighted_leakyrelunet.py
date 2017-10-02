@@ -78,14 +78,12 @@ def get_symbol(class_weights,num_classes, **kwargs):
     # stage 7 create weighted loss for binary classification
     label = mx.symbol.Variable('softmax_label')
     label = mx.symbol.reshape(data=label, shape=(0,1))
-    #label = mx.symbol.broadcast_axis(data=label, axis=1, size=2)    
+    label = mx.symbol.broadcast_axis(data=label, axis=1, size=2)    
     #label = mx.sym.Custom(data=label, op_type='debug')
 
-    prob = mx.symbol.softmax(data=fc1, name="softmax")
+    prob = mx.symbol.softmax(data=fc1, name="out")
     #prob = mx.sym.Custom(data=prob, op_type='debug')
-    prob_1 = mx.symbol.slice_axis(data=prob, name="prob", axis=1, begin=1, end=2) # get the probability of class "1"
-    #prob_1 = mx.sym.Custom(data=prob_1, op_type='debug')
-    loss = wbc_loss(prob=prob_1, label=label, cl_weights = get_class_weights(class_weights))
+    loss = wbc_loss(prob=prob, label=label, cl_weights = get_class_weights(class_weights))
     
     #pred_loss = mx.symbol.Group([mx.symbol.BlockGrad(out), loss])
     #arg_shape, output_shape, aux_shape = out.infer_shape(data=(5, 1, 36,36,36))
