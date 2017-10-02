@@ -2,7 +2,7 @@
 
 function usage_and_exit() {
     echo "usage: ./prepare_datasets.sh data_root configuration"
-    echo "    data_root     - path to data direcotires should contain 'original' folder with original data"
+    echo "    data_root     - path to data directories should contain 'original' folder with original data"
     echo "    configuration - [normal, fonova7, fonova100, test, kokA, kokB, xyA, xyB, xyC]"
     exit 1
 }
