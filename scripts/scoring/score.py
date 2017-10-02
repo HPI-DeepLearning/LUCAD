@@ -53,7 +53,7 @@ def score(model_prefix, epoch, val_subsets, metrics, gpus, batch_size, rgb_mean,
         devs = mx.cpu()
     else:
         devs = [mx.gpu(int(i)) for i in gpus.split(',')]
-
+    #prob_sym = sym.get_internals()['softmax_output']
     mod = mx.mod.Module(symbol=sym, context=devs)
     mod.bind(for_training=False,
              data_shapes=val_iter.provide_data,

@@ -81,7 +81,7 @@ def get_symbol(class_weights,num_classes, **kwargs):
     label = mx.symbol.broadcast_axis(data=label, axis=1, size=2)    
     #label = mx.sym.Custom(data=label, op_type='debug')
 
-    prob = mx.symbol.softmax(data=fc1, name="out")
+    prob = mx.symbol.softmax(data=fc1, name="softmax")
     #prob = mx.sym.Custom(data=prob, op_type='debug')
     loss = wbc_loss(prob=prob, label=label, cl_weights = get_class_weights(class_weights))
     
