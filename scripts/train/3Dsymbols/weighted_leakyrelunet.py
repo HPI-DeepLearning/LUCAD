@@ -6,12 +6,13 @@ https://github.com/juliandewit/kaggle_ndsb2017
 """
 import mxnet as mx
 from common.wbc_loss import wbc_loss
+from common.math_ops import *
 
 eps = 1e-10 + 1e-5
 bn_mom = 0.9
 fix_gamma = False
 
-def get_symbol(class_weights, **kwargs):
+def get_symbol(class_weights,num_classes, **kwargs):
     input_data = mx.symbol.Variable(name="data")
 
     #pool0 = mx.symbol.Pooling(
@@ -66,20 +67,23 @@ def get_symbol(class_weights, **kwargs):
     conv5 = mx.symbol.Convolution(
         data=dropout2, kernel=(2, 2, 2), stride=(1, 1, 1), num_filter=64)
     bn5 = mx.sym.BatchNorm(data=conv5, fix_gamma=fix_gamma, eps=eps, momentum=bn_mom)
-    relu5 = mx.symbol.LeakyReLU(data=bn5, act_type="leaky")
+    relu5 = mx.symbol.LeakyReLU(data=bn5, act_type="leaky")    
 
     dropout3 = mx.symbol.Dropout(relu5, p = 0.5)
 
     # stage 6
     flatten = mx.symbol.Flatten(data=dropout3)
-    fc1 = mx.symbol.FullyConnected(data=flatten, num_hidden=1, name="fc_pred")
+    fc1 = mx.symbol.FullyConnected(data=flatten, num_hidden=num_classes, name="fc_pred")
 
     # stage 7 create weighted loss for binary classification
     label = mx.symbol.Variable('softmax_label')
-    label = mx.symbol.reshape(data=label, shape=(0,1))    
+    label = mx.symbol.reshape(data=label, shape=(0,1))
+    label = mx.symbol.broadcast_axis(data=label, axis=1, size=2)    
+    #label = mx.sym.Custom(data=label, op_type='debug')
 
-    prob = mx.symbol.Activation(data=fc1, act_type='sigmoid', name="probability_layer")
+    prob = mx.symbol.softmax(data=fc1, name="probability")
     loss = wbc_loss(prob=prob, label=label, cl_weights = get_class_weights(class_weights))
+    #loss = mx.sym.Custom(data=loss, op_type='debug')
 
     #pred_loss = mx.symbol.Group([mx.symbol.BlockGrad(out), loss])
     #arg_shape, output_shape, aux_shape = out.infer_shape(data=(5, 1, 36,36,36))
@@ -90,5 +94,5 @@ def get_class_weights(class_weights):
     cl_weights = list()
     for idx, w in enumerate(class_weights.split(',')):
         cl_weights.append(float(w))
-    print cl_weights
+    print "Class weights: " + str(cl_weights)
     return cl_weights
