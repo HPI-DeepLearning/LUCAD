@@ -98,6 +98,13 @@ def score(model_prefix, epoch, val_subsets, metrics, gpus, batch_size, rgb_mean,
     logging.info("False Positives (Label 0, Predicted 1): %d" % confusion[0][1])
     logging.info("True  Positives (Label 1, Predicted 1): %d" % confusion[1][1])
     logging.info("False Negatives (Label 1, Predicted 0): %d" % confusion[1][0])
+
+    precision = confusion[1][1]/(confusion[0][1]+confusion[1][1])
+    recall = confusion[1][1]/(confusion[1][0]+confusion[1][1])
+    f1 = 2 * precision * recall / (precision + recall)
+    logging.info("Precision: %f" % precision)
+    logging.info("Recall: %f" % recall)
+    logging.info("F1-total: %f" % f1)
     return (num / (time.time() - tic), )
 
 
