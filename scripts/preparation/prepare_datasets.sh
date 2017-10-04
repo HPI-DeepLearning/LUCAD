@@ -30,7 +30,7 @@ if [ "${BASE_DATA}" == "" ]; then
     usage_and_exit
 fi
 
-if [ "${BASE_DATA}" == "luna" ]; then
+if [ "${BASE_DATA}" == "original" ]; then
     DATA_PREFIX="v2_${CONFIG}"
 fi
 
