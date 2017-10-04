@@ -37,7 +37,7 @@ class Viewer(tk.Frame):
 
     def create_subset_selection(self):
         self.subsetFrame = self.make_frame(row = 0, column = 0)
-        self.subsets = ["subset" + str(i) for i in range(0,10)]
+        self.subsets = helper.get_subsets(self.root)
         self.subset_var = tk.StringVar()
         self.subset_var.set(self.subsets[0])
         self.subset_label = tk.Label(self.subsetFrame, text = "Select subset")
@@ -189,7 +189,7 @@ class Viewer(tk.Frame):
         for i, k in enumerate(self.subsets):
             if subset in k:
                 self.subset_var.set(k)
-                self.on_subset_changed(0);
+                self.on_subset_changed(0)
                 return
 
     def select_files(self, uid):

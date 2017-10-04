@@ -1,19 +1,44 @@
 #!/usr/bin/env bash
 
 function usage_and_exit() {
-    echo "usage: ./prepare_datasets.sh data_root configuration"
+    echo "usage: ./prepare_datasets.sh data_root configuration [source]"
     echo "    data_root     - path to data directories should contain 'original' folder with original data"
     echo "    configuration - [normal, fonova7, fonova100, test, kokA, kokB, xyA, xyB, xyC]"
+    echo "    source        - [luna, tianchi], default: luna"
     exit 1
 }
 
-if [ "$#" -ne 2 ]; then
+DATA_ROOT="${1}"
+CONFIG="${2}"
+
+BASE_DATA=""
+if [ "$#" -eq 2 ]; then
+    BASE_DATA="original"
+fi
+
+if [ "$#" -eq 3 ]; then
+    if [ "${3}" == "luna" ]; then
+        BASE_DATA="original"
+    fi
+
+    if [ "${3}" == "tianchi" ]; then
+        BASE_DATA="tianchi-dataset"
+    fi
+fi
+
+if [ "${BASE_DATA}" == "" ]; then
     usage_and_exit
 fi
 
-DATA_ROOT=$1
-CONFIG=$2
-DATA_PREFIX="v2_${CONFIG}"
+if [ "${BASE_DATA}" == "luna" ]; then
+    DATA_PREFIX="original"
+fi
+
+if [ "${BASE_DATA}" == "tianchi-dataset" ]; then
+    DATA_PREFIX="tianchi_${CONFIG}"
+fi
+
+ORIGINAL_DATA="${DATA_ROOT}/${BASE_DATA}"
 
 OPTIONS=""
 if [ "${CONFIG}" == "test" ]; then
@@ -59,9 +84,9 @@ fi
 OUTPUT_DIR="${DATA_ROOT}/${DATA_PREFIX}"
 mkdir -p "${OUTPUT_DIR}"
 python scripts/preparation/prepare_dataset.py ${OPTIONS} \
-    ${DATA_ROOT}/original \
-    ${OUTPUT_DIR} \
-    > ${OUTPUT_DIR}/preparation.log
+    "${ORIGINAL_DATA}" \
+    "${OUTPUT_DIR}" \
+    > "${OUTPUT_DIR}/preparation.log"
 
 ##### ##### old versions below ##### #####
 

@@ -73,7 +73,7 @@ def export_subset(args, subset, candidates):
     negative = sum([(sum(1 if i['class'] == '0' else 0 for i in candidates[f]) if f in candidates else 0) for f in files])
 
     positive_augmented = positive * augment_factor
-    if args.ratio > 0:
+    if args.ratio > -1:
         if positive_augmented == 0 and negative > 0:
             logging.warning("Only negative samples in data set and no positive samples, with ratio %d set!" % args.ratio)
             logging.warning("This means none of the negative samples will be written for %s." % subset)
@@ -117,7 +117,7 @@ def export_subset(args, subset, candidates):
 
 
 def main(args):
-    subsets = ["subset" + str(i) for i in args.subsets]
+    subsets = helper.get_subsets(args.root)
 
     candidates = helper.load_candidates(args.root, args.test)
 

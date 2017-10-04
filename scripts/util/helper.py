@@ -44,10 +44,21 @@ def load_itk(filename):
     return ct_scan, origin, spacing
 
 
+def is_tianchi_dataset(root):
+    return os.path.isdir(os.path.join(root, "train_subset00"))
+
+
 def load_csv(root, filename):
-    annotations = os.path.join(root, "CSVFILES", filename)
+    if is_tianchi_dataset(root):
+        annotations = os.path.join(root, "CSVFILES", "train", filename)
+    else:
+        annotations = os.path.join(root, "CSVFILES", filename)
 
     data = {}
+
+    if not os.path.isfile(annotations):
+        return data
+
     with open(annotations) as handle:
         reader = csv.DictReader(handle)
         for row in reader:
@@ -55,6 +66,15 @@ def load_csv(root, filename):
                 data[row['seriesuid']] = []
             data[row['seriesuid']].append(row)
     return data
+
+
+def get_subsets(root):
+    subsets = []
+    ls = os.listdir(root)
+    for i in ls:
+        if os.path.isdir(os.path.join(root, i)) and "subset" in i:
+            subsets.append(i)
+    return subsets
 
 
 def load_annotations(root):
