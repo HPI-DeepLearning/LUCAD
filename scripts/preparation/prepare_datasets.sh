@@ -77,6 +77,26 @@ if [ "${CONFIG}" == "xyC" ]; then
     OPTIONS="--storage memmap --augmentation xy --shuffle --factor 25 --ratio 20"
 fi
 
+if [ "${CONFIG}" == "xyD" ]; then
+    OPTIONS="--storage memmap --augmentation xy --shuffle --factor 25 --ratio 10"
+fi
+
+if [ "${CONFIG}" == "xyE" ]; then
+    OPTIONS="--storage memmap --augmentation xy --shuffle --factor 25 --ratio 5"
+fi
+
+if [ "${CONFIG}" == "downsampledA" ]; then
+    OPTIONS="--storage memmap --augmentation none --shuffle --ratio 2"
+fi
+
+if [ "${CONFIG}" == "downsampledB" ]; then
+    OPTIONS="--storage memmap --augmentation none --shuffle --ratio 4"
+fi
+
+if [ "${CONFIG}" == "downsampledC" ]; then
+    OPTIONS="--storage memmap --augmentation none --shuffle --ratio 8"
+fi
+
 if [ "${OPTIONS}" == "" ]; then
     usage_and_exit
 fi

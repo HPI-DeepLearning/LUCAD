@@ -12,10 +12,12 @@ from util import helper
 
 
 class DistributedIter(mx.io.DataIter):
-    def __init__(self, root, subsets, batch_size = 1, prefetch = True, shuffle = False, data_name = 'data', label_name = 'softmax_label'):
+    def __init__(self, root, selection, batch_size = 1, prefetch = True, shuffle = False, data_name = 'data', label_name = 'softmax_label'):
         super(DistributedIter, self).__init__(batch_size)
         self.files = []
         info_files = {}
+
+        subsets = helper.get_filtered_subsets(root, selection)
 
         for subset in subsets:
             info_files[subset] = helper.read_info_file(os.path.join(root, "subset%d" % subset, "info.txt"))

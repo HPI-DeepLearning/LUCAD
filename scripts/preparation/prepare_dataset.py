@@ -117,7 +117,9 @@ def export_subset(args, subset, candidates):
 
 
 def main(args):
-    subsets = helper.get_subsets(args.root)
+    subsets = helper.get_filtered_subsets(args.root, args.subsets)
+
+    logging.debug(subsets)
 
     candidates = helper.load_candidates(args.root, args.test)
 
@@ -137,7 +139,7 @@ if __name__ == "__main__":
     parser.add_argument("--ratio", type=float, help="[N]egatives:[P]ositives ratio (N:P = r:1), negatives will be downsampled", default = -1, metavar="r")
     parser.add_argument("--factor", type=int, help="create a fixed number of random augmentation instead of all", default = 0)
     parser.add_argument("--cubesize", type=int, help="length, height and width of exported cubic sample in voxels", default = 36)
-    parser.add_argument("--subsets", type=int, nargs="*", help="the subsets which should be processed", default = range(0, 10))
+    parser.add_argument("--subsets", type=int, nargs="*", help="the subsets which should be processed", default = (-1,))
     parser.add_argument("--shuffle", action="store_true", help="shuffle while storing the data")
     parser.add_argument("--preview", action="store_true", help="show a preview")
     parser.add_argument("--test", action="store_true", help="test with small candidates csv")

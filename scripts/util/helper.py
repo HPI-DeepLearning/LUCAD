@@ -48,7 +48,7 @@ def is_tianchi_dataset(root):
     return os.path.isdir(os.path.join(root, "train_subset00"))
 
 
-def load_csv(root, filename):
+def load_csv(root, filename, constant_columns = ()):
     if is_tianchi_dataset(root):
         annotations = os.path.join(root, "CSVFILES", "train", filename)
     else:
@@ -62,6 +62,8 @@ def load_csv(root, filename):
     with open(annotations) as handle:
         reader = csv.DictReader(handle)
         for row in reader:
+            for k, v in constant_columns:
+                row[k] = v
             if not row['seriesuid'] in data:
                 data[row['seriesuid']] = []
             data[row['seriesuid']].append(row)
@@ -77,11 +79,28 @@ def get_subsets(root):
     return subsets
 
 
+def get_filtered_subsets(root, selection):
+    subsets = get_subsets(root)
+    assert all([isinstance(s, int) for s in selection]), "selection needs to contain ints only"
+
+    if -1 in selection:
+        return subsets
+
+    if not is_tianchi_dataset(root):
+        return filter(lambda x: int(x.replace("subset", "")) in selection, subsets)
+    else:
+        subsets.sort()
+        filtered = [subsets[s] for s in selection]
+        return filtered
+
+
 def load_annotations(root):
     return load_csv(root, "annotations.csv")
 
 
 def load_candidates(root, test = False):
+    if is_tianchi_dataset(root):
+        return load_csv(root, "annotations.csv", constant_columns = [["class", "1"]])
     if test:
         return load_csv(root, "candidates_test.csv")
     return load_csv(root, "candidates_V2.csv")

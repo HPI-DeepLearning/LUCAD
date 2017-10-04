@@ -28,18 +28,21 @@ class CandidateIter(mx.io.PrefetchingIter):
 
 
 class InnerIter(mx.io.DataIter):
-    def __init__(self, root, subsets, batch_size = 1, shuffle = False, chunk_size = 100, data_name = 'data', label_name = 'softmax_label'):
+    def __init__(self, root, selection, batch_size = 1, shuffle = False, chunk_size = 100, data_name = 'data', label_name = 'softmax_label'):
         self.data_files = []
         self.label_files = []
         self.info_files = []
+
+        subsets = helper.get_filtered_subsets(root, selection)
+
         for subset in subsets:
-            self.data_files.append(os.path.join(root, "subset%d" % subset, "data.npy"))
-            self.label_files.append(os.path.join(root, "subset%d" % subset, "labels.npy"))
-            self.info_files.append(os.path.join(root, "subset%d" % subset, "info.txt"))
+            self.data_files.append(os.path.join(root, subset, "data.npy"))
+            self.label_files.append(os.path.join(root, subset, "labels.npy"))
+            self.info_files.append(os.path.join(root, subset, "info.txt"))
 
         info_files = {}
         for subset in subsets:
-            info_files[subset] = helper.read_info_file(os.path.join(root, "subset%d" % subset, "info.txt"))
+            info_files[subset] = helper.read_info_file(os.path.join(root, subset, "info.txt"))
 
         self.info = helper.check_and_combine(info_files)
         logging.debug("Info %s: %s" % (root, self.info))

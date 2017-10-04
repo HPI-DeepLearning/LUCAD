@@ -24,11 +24,11 @@ def main(args):
 
     data_iter = get_iterator(args.root, args.subsets, batch_size = batch_size, shuffle = True, chunk_size = 100)
 
-    print "Sizes: %s" % data_iter.sizes()
-    print "Total number of samples: %d" % data_iter.total_size()
-    print "Data layout: %s" % data_iter.provide_data[0].layout
-    print "Data shape: %s" % str(data_iter.provide_data[0].shape)
-    print "Number of batches: ~%d" % (data_iter.total_size() / batch_size)
+    logging.info("Sizes: %s" % data_iter.sizes())
+    logging.info("Total number of samples: %d" % data_iter.total_size())
+    logging.info("Data layout: %s" % data_iter.provide_data[0].layout)
+    logging.info("Data shape: %s" % str(data_iter.provide_data[0].shape))
+    logging.info("Number of batches: ~%d" % (data_iter.total_size() / batch_size))
 
     measure_chunks = 1000
 
@@ -36,18 +36,18 @@ def main(args):
     # lb = helper.SimpleLoadingBar("Loading samples", data_iter.total_size())
     for batch in data_iter:
         if i == 0:
-            print "Batch shape: %s" % ",".join([str(x) for x in batch.data[0].shape])
+            logging.info("Batch shape: %s" % ",".join([str(x) for x in batch.data[0].shape]))
         if i % measure_chunks == (measure_chunks - 1):
             prev_chunk = chunk_start
             chunk_start = time.time()
             chunk = chunk_start - prev_chunk
             avg = (chunk_start - start) / ((i+1) / float(measure_chunks))
-            print "Batch %d (%.2f, total avg: %.2f sec / %d batch)!" % (i + 1, chunk, avg, measure_chunks)
+            logging.info("Batch %d (%.2f, total avg: %.2f sec / %d batch)!" % (i + 1, chunk, avg, measure_chunks))
         assert len(batch.data[0]) == batch_size
         assert len(batch.label[0]) == batch_size
         # lb.advance_progress(batch_size)
         i += 1
-    print "Finished!"
+    logging.info("Finished!")
 
 
 if __name__ == "__main__":
