@@ -31,7 +31,7 @@ if [ "${BASE_DATA}" == "" ]; then
 fi
 
 if [ "${BASE_DATA}" == "luna" ]; then
-    DATA_PREFIX="original"
+    DATA_PREFIX="v2_${CONFIG}"
 fi
 
 if [ "${BASE_DATA}" == "tianchi-dataset" ]; then
