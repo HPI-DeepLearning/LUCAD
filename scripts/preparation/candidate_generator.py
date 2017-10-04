@@ -158,17 +158,15 @@ class CandidateGenerator(object):
     def store_candidate(self, data, label, preview):
         if preview and label > 0.5:
             show_preview(data, np.asarray((0., 0., 0.)), self.current_spacing)
-        self.storage.store_candidate(data, label)
+        return self.storage.store_candidate(data, label)
 
     def generate_augmented_candidate(self, c, cube_size, cube_size_arr, preview, options):
         data, label = self.generate_single_candidate(c, cube_size, cube_size_arr, **options)
-        self.store_candidate(data, label, preview)
-        return 1
+        return self.store_candidate(data, label, preview)
 
     def generate_candidate(self, c, cube_size, cube_size_arr, preview):
         data, label = self.generate_single_candidate(c, cube_size, cube_size_arr)
-        self.store_candidate(data, label, preview)
-        return 1
+        return self.store_candidate(data, label, preview)
 
     def generate_single_candidate(self, c, cube_size, cube_size_arr, resize_index = -1, translation = None,
                                   flip_axis = "", rotate_index = 0, **kwargs):
@@ -234,7 +232,10 @@ class CandidateGenerator(object):
             if loading_bar is not None:
                 loading_bar.advance_progress(candidates_generated)
 
-    def store_info(self, info_object = {}, finished = False):
+    def store_info(self, info_object = None, finished = False):
+        if info_object is None:
+            info_object = {}
+
         info_object["started"] = self.started
         info_object["rotate"] = self.rotate
         info_object["resize"] = self.resize

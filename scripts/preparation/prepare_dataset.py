@@ -87,7 +87,7 @@ def export_subset(args, subset, candidates):
         return
 
     logging.info("Augmentation factor for positive samples: %d" % augment_factor)
-    logging.info("Positive samples (original/augmented): %d / %d" % (positive, positive * augment_factor))
+    logging.info("Positive samples (original/augmented): %d / %d" % (positive, positive_augmented))
     logging.info("Downsampling ratio for negative samples: %d" % args.ratio)
     logging.info("Negative samples (original/downsampled): %d / %d" % (negative, negatives_downsampled))
 
@@ -96,7 +96,9 @@ def export_subset(args, subset, candidates):
     kwargs = {"shuffle": args.shuffle}
     with DistributedStorage(*args_, **kwargs) if args.storage == "raw" else CandidateStorage(*args_, **kwargs) as storage:
         generator.set_candidate_storage(storage)
-        generator.store_info({"augmentation": args.augmentation, "total": total, "original": original, "files": files, "args": args})
+        generator.store_info({"augmentation": args.augmentation, "total": total, "original": original, "files": files,
+                              "args": args, "positive": positive, "negative": negative, "augmented": positive_augmented,
+                              "negatives_downsampled": negatives_downsampled})
 
         logging.info("Exporting %s..." % subset)
         loading_bar = helper.SimpleLoadingBar("Exporting", total)
@@ -113,7 +115,9 @@ def export_subset(args, subset, candidates):
             logging.debug("Generating candidates of file %s" % current_file)
             generator.generate(candidates[current_file], args.cubesize, loading_bar, args.preview)
 
-        generator.store_info({"augmentation": args.augmentation, "total": total, "original": original, "files": files, "args": args}, True)
+        generator.store_info({"augmentation": args.augmentation, "total": total, "original": original, "files": files,
+                              "args": args, "positive": positive, "negative": negative, "augmented": positive_augmented,
+                              "negatives_downsampled": negatives_downsampled})
 
 
 def main(args):

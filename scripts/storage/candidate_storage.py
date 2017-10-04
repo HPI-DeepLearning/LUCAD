@@ -47,12 +47,14 @@ class CandidateStorage(object):
             take_negative = self.negative_selection[self.neg_index]
             self.neg_index += 1
             if not take_negative:
-                return
+                return 0
 
         store_at = self.reordering[self.index]
         self.data[store_at, :, :, :, :] = data
         self.labels[store_at] = label
         self.index += 1
+
+        return 1
 
     def __enter__(self):
         return self
