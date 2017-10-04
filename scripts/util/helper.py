@@ -79,9 +79,9 @@ def get_subsets(root):
     return subsets
 
 
-def get_filtered_subsets(root, selection):
+def get_filtered_subsets(root, selection = (-1,)):
     subsets = get_subsets(root)
-    assert all([isinstance(s, int) for s in selection]), "selection needs to contain ints only"
+    assert all([isinstance(s, int) for s in selection]), "selection needs to contain integers only"
 
     if -1 in selection:
         return subsets
@@ -127,14 +127,17 @@ def normalize_to_grayscale(arr, factor = 255, type = "default"):
     return data * factor
 
 
-def check_and_combine(info_files, check = ("rotate", "flip", "sample_shape", "translate", "type", "resize", "revision", "shuffled")):
+def check_and_combine(info_files, check = ("rotate", "flip", "sample_shape", "translate", "type", "resize", "revision", "shuffled", "augmentation", "ratio", "factor", "args")):
     if len(info_files) == 1:
-        return info_files[info_files.keys()[0]]
+        d = info_files[info_files.keys()[0]]
+        return {key: d[key] for key in d if key in check}
 
     comparison = None
+    comparison_subset = ""
     for subset, info_data in info_files.items():
         if comparison is None:
             comparison = info_data
+            comparison_subset = subset
             continue
         for key, val in comparison.items():
             if key not in check:
@@ -143,7 +146,9 @@ def check_and_combine(info_files, check = ("rotate", "flip", "sample_shape", "tr
                 ok = all([x == y for x, y in zip(comparison[key], info_data[key])])
             else:
                 ok = comparison[key] == info_data[key]
-            assert ok, "Error: %s is different for subset %d: %s" % (key, subset, str(val))
+            assert ok, "Error: %s is different for %s and %s: %s" % (key, str(comparison_subset), str(subset), str(val))
+
+    assert comparison is not None, "Could not find any data in the given info files %s." % info_files
 
     return {key: comparison[key] for key in comparison if key in check}
 
@@ -162,14 +167,24 @@ def read_info_file(filename):
             key = line[:pos]
             value = line[pos + 2:]
 
+            if "Namespace" in value:
+                value = [x.replace('"', "").replace("'", "") for x in value.replace("Namespace", "")[1:-1].split(", ")]
+                new_value = []
+                for e in value:
+                    if "=" in e:
+                        new_value.append(e)
+                    else:
+                        new_value[-1] += ","+e
+                value = {k: v for k, v in [pair.split("=") for pair in new_value]}
+
             if ", " in value:
                 try:
-                    value = [int(x) for x in value.replace("shape: ", "")[1:-1].split(", ")]
+                    value = [int(x) for x in value[1:-1].split(", ")]
                 except ValueError:
                     try:
-                        value = [float(x) for x in value.replace("shape: ", "")[1:-1].split(", ")]
+                        value = [float(x) for x in value[1:-1].split(", ")]
                     except ValueError:
-                        value = [x.replace('"', "").replace("'", "") for x in value.replace("shape: ", "")[1:-1].split(", ")]
+                        value = [x.replace('"', "").replace("'", "") for x in value[1:-1].split(", ")]
 
             if isinstance(value, str):
                 try:

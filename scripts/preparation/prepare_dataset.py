@@ -117,7 +117,7 @@ def export_subset(args, subset, candidates):
 
         generator.store_info({"augmentation": args.augmentation, "total": total, "original": original, "files": files,
                               "args": args, "positive": positive, "negative": negative, "augmented": positive_augmented,
-                              "negatives_downsampled": negatives_downsampled})
+                              "negatives_downsampled": negatives_downsampled}, finished = True)
 
 
 def main(args):
