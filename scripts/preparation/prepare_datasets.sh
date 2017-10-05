@@ -3,7 +3,9 @@
 function usage_and_exit() {
     echo "usage: ./prepare_datasets.sh data_root configuration [source]"
     echo "    data_root     - path to data directories should contain 'original' folder with original data"
-    echo "    configuration - [normal, fonova7, fonova100, test, kokA, kokB, xyA, xyB, xyC]"
+    echo "    configuration - [test, normal, fonova7, fonova7_high_res, fonova25_high_res, fonova100,"
+    echo "                     fonova100_high_res, kokA, kokB, xyA, xyB, xyC, xyD, xyE, downsampledA,"
+    echo "                     downsampledB, downsampledC]"
     echo "    source        - [luna, tianchi], default: luna"
     exit 1
 }
@@ -50,10 +52,22 @@ if [ "${CONFIG}" == "normal" ]; then
 fi
 
 if [ "${CONFIG}" == "fonova7" ]; then
-    OPTIONS="--storage memmap --augmentation fonova --shuffle --voxelsize 0.5556"
+    OPTIONS="--storage memmap --augmentation fonova --shuffle"
 fi
 
 if [ "${CONFIG}" == "fonova100" ]; then
+    OPTIONS="--storage memmap --augmentation fonova --shuffle --factor 100"
+fi
+
+if [ "${CONFIG}" == "fonova7_high_res" ]; then
+    OPTIONS="--storage memmap --augmentation fonova --shuffle --voxelsize 0.5556"
+fi
+
+if [ "${CONFIG}" == "fonova25_high_res" ]; then
+    OPTIONS="--storage memmap --augmentation fonova --shuffle --voxelsize 0.5556 --factor 25"
+fi
+
+if [ "${CONFIG}" == "fonova100_high_res" ]; then
     OPTIONS="--storage memmap --augmentation fonova --shuffle --voxelsize 0.5556 --factor 100"
 fi
 
