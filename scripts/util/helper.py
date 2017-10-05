@@ -121,10 +121,13 @@ def normalize_to_grayscale(arr, factor = 255, type = "default"):
     elif type == "fonova":
         minHU, maxHU = -1000., 1000.
         minTo, maxTo = 1., 1.
-    data = (arr - minHU) / (maxHU - minHU)
-    data[data > 1] = maxTo
-    data[data < 0] = minTo
-    return data * factor
+    arr = arr.astype("f4")
+    np.subtract(arr, minHU, out=arr)
+    np.divide(arr, maxHU - minHU, out=arr)
+    arr[arr > 1] = maxTo
+    arr[arr < 0] = minTo
+    np.multiply(arr, factor, out=arr)
+    return arr.astype(DTYPE)
 
 
 def check_and_combine(info_files, exclude = ("started", "written", "finished", "shape", "total", "positive",
@@ -201,34 +204,42 @@ def read_info_file(filename):
 
 
 def rescale_patient_images(scan, spacing, target_voxel_mm, is_mask_image=False, verbose=False):
-    # logging.debug(("Spacing: %s" % spacing))
-    # logging.debug(("Shape: %s" % str(scan.shape)))
+    logging.debug(("Spacing: %s" % spacing))
+    logging.debug(("Shape: %s" % str(scan.shape)))
 
-    # logging.info("Resizing dim z")
+    # logging.debug("Resizing dim z")
     resize_x = 1.0
     resize_y = float(spacing[0]) / float(target_voxel_mm)
     interpolation = cv2.INTER_NEAREST if is_mask_image else cv2.INTER_LINEAR
     res = cv2.resize(scan, dsize=None, fx=resize_x, fy=resize_y, interpolation=interpolation)  # opencv assumes y, x, channels umpy array, so y = z pfff
-    # logging.info( "Shape is now : ", res.shape)
+    # logging.debug( "Shape is now : ", res.shape)
 
     res = res.swapaxes(0, 2)
     res = res.swapaxes(0, 1)
-    # logging.info("Shape: ", res.shape)
     resize_y = float(spacing[1]) / float(target_voxel_mm)
     resize_x = float(spacing[2]) / float(target_voxel_mm)
 
     # cv2 can handle max 512 channels..
+    # logging.debug(("Shape: %s" % str(res.shape)))
     if res.shape[2] > 512:
+        slice_size = 256
+        q, r = divmod(res.shape[2], slice_size)
         res = res.swapaxes(0, 2)
-        res1 = res[:256]
-        res2 = res[256:]
-        res1 = res1.swapaxes(0, 2)
-        res2 = res2.swapaxes(0, 2)
-        res1 = cv2.resize(res1, dsize=None, fx=resize_x, fy=resize_y, interpolation=interpolation)
-        res2 = cv2.resize(res2, dsize=None, fx=resize_x, fy=resize_y, interpolation=interpolation)
-        res1 = res1.swapaxes(0, 2)
-        res2 = res2.swapaxes(0, 2)
-        res = np.vstack([res1, res2])
+        parts = []
+        for i in range(0, q):
+            parts.append(res[i * slice_size:(i+1) * slice_size])
+        if r > 0:
+            parts.append(res[-1 * r:])
+
+        # logging.debug(("Parts: %s" % str([p.shape for p in parts])))
+
+        for i in range(0, len(parts)):
+            # logging.debug("Parts: %d" % i)
+            parts[i] = parts[i].swapaxes(0, 2)
+            parts[i] = cv2.resize(parts[i], dsize=None, fx=resize_x, fy=resize_y, interpolation=interpolation)
+            parts[i] = parts[i].swapaxes(0, 2)
+        res = np.vstack(parts)
+        parts = None
         res = res.swapaxes(0, 2)
     else:
         res = cv2.resize(res, dsize=None, fx=resize_x, fy=resize_y, interpolation=interpolation)
@@ -236,7 +247,7 @@ def rescale_patient_images(scan, spacing, target_voxel_mm, is_mask_image=False, 
     res = res.swapaxes(0, 2)
     res = res.swapaxes(2, 1)
 
-    # logging.debug(("Shape after: %s" % str(res.shape)))
+    logging.debug(("Shape after: %s" % str(res.shape)))
 
     return res
 

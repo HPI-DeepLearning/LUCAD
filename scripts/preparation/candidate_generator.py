@@ -147,13 +147,15 @@ class CandidateGenerator(object):
         self.current_scan = None
 
         logging.debug("Generating resized scan for index %d" % index)
+        logging.debug("Original scan shape %s" % str(self.original_scan.shape))
 
         size = self.resize[index]
         actual_voxel_size = size * self.voxel_size
 
         self.current_resize_index = index
-        self.current_scan = (helper.normalize_to_grayscale(helper.rescale_patient_images(self.original_scan, self.original_spacing, actual_voxel_size), type = self.normalization).astype(helper.DTYPE))
-        self.current_spacing = (np.asarray([actual_voxel_size, actual_voxel_size, actual_voxel_size]))
+        temp = helper.rescale_patient_images(self.original_scan, self.original_spacing, actual_voxel_size)
+        self.current_scan = helper.normalize_to_grayscale(temp, type = self.normalization)
+        self.current_spacing = np.asarray([actual_voxel_size, actual_voxel_size, actual_voxel_size])
 
     def store_candidate(self, data, label, preview):
         if preview and label > 0.5:
