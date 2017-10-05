@@ -127,10 +127,13 @@ def normalize_to_grayscale(arr, factor = 255, type = "default"):
     return data * factor
 
 
-def check_and_combine(info_files, check = ("rotate", "flip", "sample_shape", "translate", "type", "resize", "revision", "shuffled", "augmentation", "ratio", "factor", "args")):
+def check_and_combine(info_files, exclude = ("started", "written", "finished", "shape", "total", "positive",
+                                             "negative", "original", "augmented", "negatives_downsampled", "files",
+                                             "samples")):
+
     if len(info_files) == 1:
         d = info_files[info_files.keys()[0]]
-        return {key: d[key] for key in d if key in check}
+        return {key: d[key] for key in d if key not in exclude}
 
     comparison = None
     comparison_subset = ""
@@ -140,7 +143,7 @@ def check_and_combine(info_files, check = ("rotate", "flip", "sample_shape", "tr
             comparison_subset = subset
             continue
         for key, val in comparison.items():
-            if key not in check:
+            if key in exclude:
                 continue
             if isinstance(val, list):
                 ok = all([x == y for x, y in zip(comparison[key], info_data[key])])
@@ -150,7 +153,7 @@ def check_and_combine(info_files, check = ("rotate", "flip", "sample_shape", "tr
 
     assert comparison is not None, "Could not find any data in the given info files %s." % info_files
 
-    return {key: comparison[key] for key in comparison if key in check}
+    return {key: comparison[key] for key in comparison if key not in exclude}
 
 
 def read_info_file(filename):

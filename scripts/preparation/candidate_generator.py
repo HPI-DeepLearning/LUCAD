@@ -242,6 +242,7 @@ class CandidateGenerator(object):
         info_object["flip"] = self.flip
         info_object["translate_limits"] = self.translate_limits
         info_object["translate"] = self.translations
+        info_object["augment_factor"] = self.get_augment_factor()
         if finished:
             info_object["finished"] = helper.now()
         self.storage.store_info(info_object)
