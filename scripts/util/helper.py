@@ -212,7 +212,6 @@ def rescale_patient_images(scan, spacing, target_voxel_mm, is_mask_image=False, 
     resize_y = float(spacing[0]) / float(target_voxel_mm)
     interpolation = cv2.INTER_NEAREST if is_mask_image else cv2.INTER_LINEAR
     res = cv2.resize(scan, dsize=None, fx=resize_x, fy=resize_y, interpolation=interpolation)  # opencv assumes y, x, channels umpy array, so y = z pfff
-    # logging.debug( "Shape is now : ", res.shape)
 
     res = res.swapaxes(0, 2)
     res = res.swapaxes(0, 1)
@@ -237,6 +236,9 @@ def rescale_patient_images(scan, spacing, target_voxel_mm, is_mask_image=False, 
             # logging.debug("Parts: %d" % i)
             parts[i] = parts[i].swapaxes(0, 2)
             parts[i] = cv2.resize(parts[i], dsize=None, fx=resize_x, fy=resize_y, interpolation=interpolation)
+            if len(parts[i].shape) == 2:
+                parts[i] = np.expand_dims(parts[i], 2)
+                logging.debug("Partshape changed: %s" % str(parts[i].shape))
             parts[i] = parts[i].swapaxes(0, 2)
         res = np.vstack(parts)
         parts = None

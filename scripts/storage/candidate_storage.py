@@ -62,7 +62,8 @@ class CandidateStorage(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         logging.debug("Written: %d, expected: %d" % (self.index, self.n))
         if exc_type is not None:
-            logging.error("%s, %s, %s" % (exc_type, exc_val, exc_tb))
+            logging.error("Wrong number of candidates written!")
+            return False
         assert self.index == self.n, "wrong number of candidates written"
 
     def store_info(self, info_object):
