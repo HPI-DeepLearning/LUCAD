@@ -131,7 +131,7 @@ def normalize_to_grayscale(arr, factor = 255, type = "default"):
 
 
 def check_and_combine(info_files, exclude = ("started", "written", "finished", "shape", "total", "positive",
-                                             "negative", "original", "augmented", "negatives_downsampled", "files",
+                                             "negative", "original", "augmented", "negatives_downsampled",
                                              "samples")):
 
     if len(info_files) == 1:
