@@ -45,7 +45,7 @@ class InnerIter(mx.io.DataIter):
         info_files = {}
         for subset in subsets:
             # skip tianchi subset for infofiles
-            if subset == "subset10":
+            if not helper.is_tianchi_dataset(root) and int(subset.replace("subset", "")) >= 10:
                 continue
             info_files[subset] = helper.read_info_file(os.path.join(root, subset, "info.txt"))
 
