@@ -139,7 +139,6 @@ def normalize_to_grayscale(arr, factor = 255, type = "default"):
 
 
 def check_and_combine(info_files, exclude = EXC_ATTRIBUTES):
-
     if len(info_files) == 1:
         return info_files[info_files.keys()[0]]
         # d = info_files[info_files.keys()[0]]

@@ -43,12 +43,16 @@ class InnerIter(mx.io.DataIter):
             self.info_files.append(os.path.join(root, subset, "info.txt"))
 
         info_files = {}
+        tianchi_subsets = {}
         for subset in subsets:
             # skip tianchi subset for infofiles
             if not helper.is_tianchi_dataset(root) and int(subset.replace("subset", "")) >= 10:
+                tianchi_subsets[subset] = helper.read_info_file(os.path.join(root, subset, "info.txt"))
                 continue
             info_files[subset] = helper.read_info_file(os.path.join(root, subset, "info.txt"))
 
+        if len(info_files) == 0:
+            info_files = tianchi_subsets
         self.info = helper.check_and_combine(info_files)
         logging.debug("Info %s: %s" % (root, self.info))
 
