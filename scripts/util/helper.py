@@ -12,6 +12,8 @@ import logging
 
 
 DTYPE = 'u1'
+EXC_ATTRIBUTES = ("started", "written", "finished", "shape", "total", "positive", "negative",
+                  "original", "augmented", "negatives_downsampled", "samples", "files")
 
 
 def now():
@@ -87,7 +89,10 @@ def get_filtered_subsets(root, selection = (-1,)):
         return subsets
 
     if not is_tianchi_dataset(root):
-        return filter(lambda x: int(x.replace("subset", "")) in selection, subsets)
+        return_value = filter(lambda x: int(x.replace("subset", "")) in selection, subsets)
+        if len(return_value) != len(selection):
+            logging.warning("Missing subset(s), subsets were %s, but only found %s" % (selection, return_value))
+        return return_value
     else:
         subsets.sort()
         filtered = [subsets[s] for s in selection]
@@ -130,13 +135,12 @@ def normalize_to_grayscale(arr, factor = 255, type = "default"):
     return arr.astype(DTYPE)
 
 
-def check_and_combine(info_files, exclude = ("started", "written", "finished", "shape", "total", "positive",
-                                             "negative", "original", "augmented", "negatives_downsampled",
-                                             "samples")):
+def check_and_combine(info_files, exclude = EXC_ATTRIBUTES):
 
     if len(info_files) == 1:
-        d = info_files[info_files.keys()[0]]
-        return {key: d[key] for key in d if key not in exclude}
+        return info_files[info_files.keys()[0]]
+        # d = info_files[info_files.keys()[0]]
+        # return {key: d[key] for key in d if key not in exclude}
 
     comparison = None
     comparison_subset = ""
@@ -152,7 +156,7 @@ def check_and_combine(info_files, exclude = ("started", "written", "finished", "
                 ok = all([x == y for x, y in zip(comparison[key], info_data[key])])
             else:
                 ok = comparison[key] == info_data[key]
-            assert ok, "Error: %s is different for %s and %s: %s" % (key, str(comparison_subset), str(subset), str(val))
+            assert ok, "Error: %s is different for %s/%s: %s/%s" % (key, str(comparison_subset), str(subset), str(val), str(info_data[key]))
 
     assert comparison is not None, "Could not find any data in the given info files %s." % info_files
 

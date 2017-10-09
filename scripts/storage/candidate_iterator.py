@@ -35,6 +35,8 @@ class InnerIter(mx.io.DataIter):
 
         subsets = helper.get_filtered_subsets(root, selection)
 
+        logging.debug("Subsets for iterator: %s" % str(subsets))
+
         for subset in subsets:
             self.data_files.append(os.path.join(root, subset, "data.npy"))
             self.label_files.append(os.path.join(root, subset, "labels.npy"))
@@ -42,6 +44,9 @@ class InnerIter(mx.io.DataIter):
 
         info_files = {}
         for subset in subsets:
+            # skip tianchi subset for infofiles
+            if subset == "subset10":
+                continue
             info_files[subset] = helper.read_info_file(os.path.join(root, subset, "info.txt"))
 
         self.info = helper.check_and_combine(info_files)
@@ -65,9 +70,7 @@ class InnerIter(mx.io.DataIter):
         self.needs_shuffling = self.shuffle and self.info["shuffled"] == "False"
         logging.debug("Needs shuffling: %s" % self.needs_shuffling)
 
-        self.current_file = 0
-        self.current_chunk = 0
-        self.__iterator = None
+        self.reset()
 
     def get_info(self):
         return self.info
@@ -110,7 +113,6 @@ class InnerIter(mx.io.DataIter):
                 self.current_file += 1
                 continue
 
-            # logging.debug("Create new NDArrayIter, %s - %d:%d" % (self.data_files[self.current_file], start, end))
             self.__iterator = mx.io.NDArrayIter(data = data[start:end, :, :, :, :], label = labels[start:end],
                                                 batch_size = self.batch_size, shuffle = self.needs_shuffling,
                                                 data_name = self.data_name, label_name = self.label_name)

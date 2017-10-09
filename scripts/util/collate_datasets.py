@@ -126,6 +126,7 @@ def main(args):
         formatter = CSVFormatter(args.output)
 
     all_data = []
+
     for ds in datasets:
         if "CSVFILES" in os.listdir(os.path.join(args.root, ds)):
             continue
@@ -141,6 +142,7 @@ def main(args):
         "translate": 1,
         "resize": [1.0],
         "flip": "('',)",
+        "ratio": "-1"
     }
 
     all_print_data = []

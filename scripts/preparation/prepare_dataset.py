@@ -48,7 +48,7 @@ def export_subset(args, subset, candidates):
             translate_limits = (-2, 2),
             translate = "after",
             translate_axes = "xy",
-            factor = 7 if args.factor == 0 else args.factor,
+            factor = args.factor,
             normalization = "fonova"
         )
     elif args.augmentation == "kok":

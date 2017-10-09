@@ -45,7 +45,6 @@ def main(args):
             logging.info("Batch %d (%.2f, total avg: %.2f sec / %d batch)!" % (i + 1, chunk, avg, measure_chunks))
         assert len(batch.data[0]) == batch_size
         assert len(batch.label[0]) == batch_size
-        # lb.advance_progress(batch_size)
         i += 1
     logging.info("Finished!")
 

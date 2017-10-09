@@ -52,7 +52,7 @@ if [ "${CONFIG}" == "normal" ]; then
 fi
 
 if [ "${CONFIG}" == "fonova7" ]; then
-    OPTIONS="--storage memmap --augmentation fonova --shuffle"
+    OPTIONS="--storage memmap --augmentation fonova --shuffle --factor 7"
 fi
 
 if [ "${CONFIG}" == "fonova100" ]; then
@@ -60,7 +60,7 @@ if [ "${CONFIG}" == "fonova100" ]; then
 fi
 
 if [ "${CONFIG}" == "fonova7_high_res" ]; then
-    OPTIONS="--storage memmap --augmentation fonova --shuffle --voxelsize 0.5556"
+    OPTIONS="--storage memmap --augmentation fonova --shuffle --voxelsize 0.5556 --factor 7"
 fi
 
 if [ "${CONFIG}" == "fonova25_high_res" ]; then
