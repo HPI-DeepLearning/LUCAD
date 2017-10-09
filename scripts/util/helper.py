@@ -84,19 +84,22 @@ def get_subsets(root):
 def get_filtered_subsets(root, selection = (-1,)):
     subsets = get_subsets(root)
     assert all([isinstance(s, int) for s in selection]), "selection needs to contain integers only"
+    subsets.sort()
 
     if -1 in selection:
-        return subsets
+        if is_tianchi_dataset(root):
+            return subsets
+        else:
+            return ["subset%d" % i for i in range(0, 10)]
 
-    if not is_tianchi_dataset(root):
+    if is_tianchi_dataset(root):
+        filtered = [subsets[s] for s in selection]
+        return filtered
+    else:
         return_value = filter(lambda x: int(x.replace("subset", "")) in selection, subsets)
         if len(return_value) != len(selection):
             logging.warning("Missing subset(s), subsets were %s, but only found %s" % (selection, return_value))
         return return_value
-    else:
-        subsets.sort()
-        filtered = [subsets[s] for s in selection]
-        return filtered
 
 
 def load_annotations(root):
