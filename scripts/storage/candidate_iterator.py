@@ -11,6 +11,26 @@ import numpy as np
 from util import helper
 
 
+class SequentialIndex(object):
+    def __init__(self, sizes):
+        self.part = 0
+        self.offset = 0
+        self.sizes = sizes
+
+    def __len__(self):
+        return sum(self.sizes)
+
+    def __getitem__(self, index):
+        new_index = index - self.offset
+        if new_index >= self.sizes[self.part]:
+            self.offset += self.sizes[self.part]
+            self.part += 1
+            if self.part >= len(self.sizes):
+                raise IndexError("SequentialIndex - index out of range")
+            return self[index]
+        return new_index, self.part
+
+
 class CandidateIter(mx.io.PrefetchingIter):
     def __init__(self, root, subsets, batch_size = 1, shuffle = False, chunk_size = 100, data_name = 'data', label_name = 'softmax_label'):
         self.__inner_iter = InnerIter(root, subsets, batch_size = batch_size, shuffle = shuffle,
@@ -29,50 +49,58 @@ class CandidateIter(mx.io.PrefetchingIter):
 
 class InnerIter(mx.io.DataIter):
     def __init__(self, root, selection, batch_size = 1, shuffle = False, chunk_size = 100, data_name = 'data', label_name = 'softmax_label'):
-        self.data_files = []
-        self.label_files = []
-        self.info_files = []
-
-        subsets = helper.get_filtered_subsets(root, selection)
-
-        logging.debug("Subsets for iterator: %s" % str(subsets))
-
-        for subset in subsets:
-            self.data_files.append(os.path.join(root, subset, "data.npy"))
-            self.label_files.append(os.path.join(root, subset, "labels.npy"))
-            self.info_files.append(os.path.join(root, subset, "info.txt"))
-
-        info_files = {}
-        tianchi_subsets = {}
-        for subset in subsets:
-            # skip tianchi subset for infofiles
-            if not helper.is_tianchi_dataset(root) and int(subset.replace("subset", "")) >= 10:
-                tianchi_subsets[subset] = helper.read_info_file(os.path.join(root, subset, "info.txt"))
-                continue
-            info_files[subset] = helper.read_info_file(os.path.join(root, subset, "info.txt"))
-
-        if len(info_files) == 0:
-            info_files = tianchi_subsets
-        self.info = helper.check_and_combine(info_files)
-        logging.debug("Info %s: %s" % (root, self.info))
-
-        if shuffle:
-            random.seed(42)
-            random.shuffle(self.data_files)
-            random.seed(42)
-            random.shuffle(self.label_files)
-            random.seed(42)
-            random.shuffle(self.info_files)
-
-        self.shuffle = shuffle
-        self.root = root
         self.batch_size = batch_size
-        self.chunk_size = chunk_size
         self.data_name = data_name
         self.label_name = label_name
 
-        self.needs_shuffling = self.shuffle and self.info["shuffled"] == "False"
+        self.data_files = []
+        self.label_files = []
+        info_files_normal = {}
+        info_files_tianchi = {}
+
+        self.subsets = helper.get_filtered_subsets(root, selection)
+        logging.debug("Subsets for iterator: %s" % str(self.subsets))
+
+        for subset in self.subsets:
+            info_file_data = helper.read_info_file(os.path.join(root, subset, "info.txt"))
+            shape = info_file_data["shape"]
+            if len(shape) == 4:
+                shape = shape[:1] + [1] + shape[1:]
+
+            data_path = os.path.join(root, subset, "data.npy")
+            self.data_files.append(np.memmap(data_path, dtype = helper.DTYPE, mode = "r"))
+            self.data_files[-1].shape = shape
+
+            label_path = os.path.join(root, subset, "labels.npy")
+            self.label_files.append(np.memmap(label_path, dtype = helper.DTYPE, mode = "r"))
+            self.label_files[-1].shape = (shape[0],)
+
+            if not helper.is_tianchi_dataset(root) and int(subset.replace("subset", "")) >= 10:
+                info_files_tianchi[subset] = info_file_data
+            else:
+                info_files_normal[subset] = info_file_data
+
+        self.batch_shape = tuple([self.batch_size] + info_file_data["shape"][2:])
+
+        if len(info_files_normal) == 0:
+            info_files_normal = info_files_tianchi
+        self.info = helper.check_and_combine(info_files_normal)
+        logging.debug("Info %s: %s" % (root, self.info))
+
+        self.needs_shuffling = shuffle and self.info["shuffled"] == "False"
         logging.debug("Needs shuffling: %s" % self.needs_shuffling)
+
+        if self.needs_shuffling:
+            self.idx = np.zeros((self.total_size(), 2), dtype='int32')
+            offset = 0
+            for i, labels in enumerate(self.label_files):
+                self.idx[offset:offset + len(labels), 1] = i
+                self.idx[offset:offset + len(labels), 2] = np.arrange(0, len(labels))
+            rng = np.random.RandomState(42)
+            rng.shuffle(self.idx)
+            logging.debug("shuffled idx (first 20): %s" % str(self.idx[20]))
+        else:
+            self.idx = SequentialIndex([len(labels) for labels in self.label_files])
 
         self.reset()
 
@@ -81,9 +109,8 @@ class InnerIter(mx.io.DataIter):
 
     def sizes(self):
         sizes = {}
-        for filename in self.label_files:
-            labels = np.memmap(filename, dtype = helper.DTYPE, mode = "r")
-            sizes[filename] = len(labels)
+        for i, subset in enumerate(self.subsets):
+            sizes[subset] = len(self.label_files[i])
         return sizes
 
     def total_size(self):
@@ -127,29 +154,36 @@ class InnerIter(mx.io.DataIter):
         return self
 
     def reset(self):
-        self.current_file = 0
-        self.current_chunk = 0
-        self.__iterator = None
+        self.cursor = 0
 
     def __next__(self):
         return self.next()
 
     @property
     def provide_data(self):
-        data = self.get_current_iterator().provide_data
-        data[0].layout = "NCDHW"
-        return data
+        data_description = mx.io.DataDesc(0, self.batch_shape, helper.DTYPE)
+        data_description.layout = "NCDHW"
+        return [data_description]
 
     @property
     def provide_label(self):
-        return self.get_current_iterator().provide_label
+        label_description = mx.io.DataDesc(0, (self.batch_size, ), helper.DTYPE)
+        return [label_description]
 
     def next(self):
-        result = None
-        while result is None:
-            iterator = self.get_current_iterator()
-            try:
-                result = iterator.next()
-            except StopIteration:
-                self.__iterator = None
-        return result
+        current_batch_size = 0
+        data = np.zeros(self.batch_shape, dtype=helper.DTYPE)
+        labels = np.zeros(self.batch_size, dtype=helper.DTYPE)
+        while current_batch_size < self.batch_size:
+            if self.cursor >= len(self.idx):
+                raise StopIteration
+
+            i, p = self.idx[self.cursor]
+
+            data[current_batch_size] = self.data_files[p][i]
+            labels[current_batch_size] = self.label_files[p][i]
+            self.cursor += 1
+            current_batch_size += 1
+
+        pad = self.batch_size - current_batch_size
+        return mx.io.DataBatch(data=[mx.io.array(data)], label=[mx.io.array(labels)], pad=pad, index = None)
