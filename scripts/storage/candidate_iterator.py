@@ -28,13 +28,13 @@ class SequentialIndex(object):
             if self.part >= len(self.sizes):
                 raise IndexError("SequentialIndex - index out of range")
             return self[index]
-        return new_index, self.part
+        return self.part, new_index
 
 
 class CandidateIter(mx.io.PrefetchingIter):
     def __init__(self, root, subsets, batch_size = 1, shuffle = False, chunk_size = 100, data_name = 'data', label_name = 'softmax_label'):
         self.__inner_iter = InnerIter(root, subsets, batch_size = batch_size, shuffle = shuffle,
-                                      chunk_size = 1, data_name = data_name, label_name = label_name)
+                                      data_name = data_name, label_name = label_name)
         super(CandidateIter, self).__init__(self.__inner_iter)
 
     def get_info(self):
@@ -48,7 +48,7 @@ class CandidateIter(mx.io.PrefetchingIter):
 
 
 class InnerIter(mx.io.DataIter):
-    def __init__(self, root, selection, batch_size = 1, shuffle = False, chunk_size = 100, data_name = 'data', label_name = 'softmax_label'):
+    def __init__(self, root, selection, batch_size = 1, shuffle = False, data_name = 'data', label_name = 'softmax_label'):
         self.batch_size = batch_size
         self.data_name = data_name
         self.label_name = label_name
@@ -94,11 +94,12 @@ class InnerIter(mx.io.DataIter):
             self.idx = np.zeros((self.total_size(), 2), dtype='int32')
             offset = 0
             for i, labels in enumerate(self.label_files):
-                self.idx[offset:offset + len(labels), 1] = i
-                self.idx[offset:offset + len(labels), 2] = np.arrange(0, len(labels))
+                self.idx[offset:offset + len(labels), 0] = i
+                self.idx[offset:offset + len(labels), 1] = np.arange(0, len(labels))
+                offset += len(labels)
             rng = np.random.RandomState(42)
             rng.shuffle(self.idx)
-            logging.debug("shuffled idx (first 20): %s" % str(self.idx[20]))
+            logging.debug("shuffled idx (first 20): %s" % str(self.idx[:20]))
         else:
             self.idx = SequentialIndex([len(labels) for labels in self.label_files])
 
@@ -117,39 +118,6 @@ class InnerIter(mx.io.DataIter):
         sizes = self.sizes()
         return sum([sizes[x] for x in sizes])
 
-    def get_current_iterator(self):
-        while self.__iterator is None:
-            if self.current_file >= len(self.data_files):
-                raise StopIteration
-
-            info = helper.read_info_file(self.info_files[self.current_file])
-            shape = info["shape"]
-
-            if len(shape) == 4:
-                shape = shape[:1] + [1] + shape[1:]
-
-            data = np.memmap(self.data_files[self.current_file], dtype = helper.DTYPE, mode = "r")
-            data.shape = shape
-
-            labels = np.memmap(self.label_files[self.current_file], dtype = helper.DTYPE, mode = "r")
-            labels.shape = (shape[0])
-
-            start = self.current_chunk * self.chunk_size * self.batch_size
-            end = min((self.current_chunk + 1) * self.chunk_size * self.batch_size, data.shape[0])
-
-            self.current_chunk += 1
-
-            if end - start < self.batch_size:
-                self.current_chunk = 0
-                self.current_file += 1
-                continue
-
-            self.__iterator = mx.io.NDArrayIter(data = data[start:end, :, :, :, :], label = labels[start:end],
-                                                batch_size = self.batch_size, shuffle = self.needs_shuffling,
-                                                data_name = self.data_name, label_name = self.label_name)
-
-        return self.__iterator
-
     def __iter__(self):
         return self
 
@@ -161,13 +129,13 @@ class InnerIter(mx.io.DataIter):
 
     @property
     def provide_data(self):
-        data_description = mx.io.DataDesc(0, self.batch_shape, helper.DTYPE)
+        data_description = mx.io.DataDesc(self.data_name, self.batch_shape, helper.DTYPE)
         data_description.layout = "NCDHW"
         return [data_description]
 
     @property
     def provide_label(self):
-        label_description = mx.io.DataDesc(0, (self.batch_size, ), helper.DTYPE)
+        label_description = mx.io.DataDesc(self.label_name, (self.batch_size, ), helper.DTYPE)
         return [label_description]
 
     def next(self):
@@ -176,9 +144,12 @@ class InnerIter(mx.io.DataIter):
         labels = np.zeros(self.batch_size, dtype=helper.DTYPE)
         while current_batch_size < self.batch_size:
             if self.cursor >= len(self.idx):
-                raise StopIteration
+                if current_batch_size == 0:
+                    raise StopIteration
+                else:
+                    break
 
-            i, p = self.idx[self.cursor]
+            p, i = self.idx[self.cursor]
 
             data[current_batch_size] = self.data_files[p][i]
             labels[current_batch_size] = self.label_files[p][i]
@@ -186,4 +157,4 @@ class InnerIter(mx.io.DataIter):
             current_batch_size += 1
 
         pad = self.batch_size - current_batch_size
-        return mx.io.DataBatch(data=[mx.io.array(data)], label=[mx.io.array(labels)], pad=pad, index = None)
+        return mx.io.DataBatch(data=[mx.io.array(data)], label=[mx.io.array(labels)], pad=pad, index=None)

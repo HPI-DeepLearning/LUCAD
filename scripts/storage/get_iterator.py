@@ -22,7 +22,7 @@ def main(args):
 
     batch_size = 30
 
-    data_iter = get_iterator(args.root, args.subsets, batch_size = batch_size, shuffle = True, chunk_size = 100)
+    data_iter = get_iterator(args.root, args.subsets, batch_size = args.batch_size, shuffle = args.shuffle, chunk_size = 100)
 
     logging.info("Sizes: %s" % data_iter.sizes())
     logging.info("Total number of samples: %d" % data_iter.total_size())
@@ -30,7 +30,7 @@ def main(args):
     logging.info("Data shape: %s" % str(data_iter.provide_data[0].shape))
     logging.info("Number of batches: ~%d" % (data_iter.total_size() / batch_size))
 
-    measure_chunks = 1000
+    measure_chunks = 10
 
     i = 0
     # lb = helper.SimpleLoadingBar("Loading samples", data_iter.total_size())
@@ -60,4 +60,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "test the dataset iterator")
     parser.add_argument("root", type=str, help="folder containing prepared dataset folders")
     parser.add_argument("--subsets", type=int, nargs="*", help="the subsets which should be processed", default = range(0, 10))
+    parser.add_argument("--batch-size", type=int, help="batch size", default = 30)
+    parser.add_argument("--shuffle", action="store_true", help="whether the data should be shuffled")
     main(parser.parse_args())
