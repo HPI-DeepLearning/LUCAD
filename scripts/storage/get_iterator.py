@@ -46,6 +46,7 @@ def main(args):
         assert len(batch.data[0]) == batch_size
         assert len(batch.label[0]) == batch_size
         i += 1
+    logging.info("Total time: %.2f s" % (time.time() - start))
     logging.info("Finished!")
 
 
