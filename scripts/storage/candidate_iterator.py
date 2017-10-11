@@ -13,9 +13,12 @@ from util import helper
 
 class SequentialIndex(object):
     def __init__(self, sizes):
+        self.sizes = sizes
+        self.reset()
+
+    def reset(self):
         self.part = 0
         self.offset = 0
-        self.sizes = sizes
 
     def __len__(self):
         return sum(self.sizes)
@@ -29,6 +32,32 @@ class SequentialIndex(object):
                 raise IndexError("SequentialIndex - index out of range")
             return self[index]
         return self.part, new_index
+
+
+class RandomIndex(object):
+    def __init__(self, sizes):
+        self.sizes = sizes
+        self.idx = np.zeros(sum(sizes), dtype = 'int32')
+        offset = 0
+        for i, l in enumerate(sizes):
+            self.idx[offset:offset + l] = i
+            offset += l
+        rng = np.random.RandomState(42)
+        rng.shuffle(self.idx)
+        logging.debug("shuffled idx (first 20): %s" % str(self.idx[:20]))
+        self.reset()
+
+    def reset(self):
+        self.cursors = [0] * len(self.sizes)
+
+    def __len__(self):
+        return sum(self.idx)
+
+    def __getitem__(self, index):
+        p = self.idx[index]
+        i = self.cursors[p]
+        self.cursors[p] += 1
+        return p, i
 
 
 class CandidateIter(mx.io.PrefetchingIter):
@@ -91,15 +120,7 @@ class InnerIter(mx.io.DataIter):
         logging.debug("Needs shuffling: %s" % self.needs_shuffling)
 
         if self.needs_shuffling:
-            self.idx = np.zeros((self.total_size(), 2), dtype='int32')
-            offset = 0
-            for i, labels in enumerate(self.label_files):
-                self.idx[offset:offset + len(labels), 0] = i
-                self.idx[offset:offset + len(labels), 1] = np.arange(0, len(labels))
-                offset += len(labels)
-            rng = np.random.RandomState(42)
-            rng.shuffle(self.idx)
-            logging.debug("shuffled idx (first 20): %s" % str(self.idx[:20]))
+            self.idx = RandomIndex([len(labels) for labels in self.label_files])
         else:
             self.idx = SequentialIndex([len(labels) for labels in self.label_files])
 
@@ -123,6 +144,7 @@ class InnerIter(mx.io.DataIter):
 
     def reset(self):
         self.cursor = 0
+        self.idx.reset()
 
     def __next__(self):
         return self.next()
@@ -150,6 +172,7 @@ class InnerIter(mx.io.DataIter):
                     break
 
             p, i = self.idx[self.cursor]
+            print p, i
 
             data[current_batch_size] = self.data_files[p][i]
             labels[current_batch_size] = self.label_files[p][i]
