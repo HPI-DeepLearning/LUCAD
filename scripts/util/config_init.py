@@ -43,7 +43,8 @@ class LUCADConfig(object):
         return self.config.getboolean(section, value)
 
     def write(self, fileobject):
-        return self.config.write(fileobject)
+        with open(fileobject, "w") as handle:
+            return self.config.write(handle)
 
     def _overwrite_with_args(self):
         if self.args is None:

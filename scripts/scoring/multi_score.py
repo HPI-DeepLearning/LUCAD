@@ -47,13 +47,8 @@ class Scorer(object):
 
     def score_all(self):
         for val_set in self.validation_subsets:
-            metrics = [mx.metric.create('acc'), mx.metric.create('f1')]
-            # mx.metric.create('top_k_accuracy', top_k = 5)
-
-            (speed,) = self.score(metrics, val_set)
+            (speed,) = self.score(val_set)
             logging.info('Finished with %f images per second', speed)
-            for m in metrics:
-                logging.info(m.get())
 
     def setup_output(self, subset):
         if c.str("file") != "":
@@ -93,7 +88,7 @@ class Scorer(object):
             mod.set_params(arg_params, aux_params)
             self.modules.append(mod)
 
-    def score(self, metrics, subset):
+    def score(self, subset):
         # create validation iterator
         self.val_iter = get_iterator(c.str("data_root"), [subset], batch_size=c.int("batch_size"))
         self.seriesuids = self.val_iter.get_info()["files"]
@@ -102,10 +97,7 @@ class Scorer(object):
         self.setup_output(subset)
         self.load_models(subset)
 
-        # if not isinstance(metrics, list):
-        #     metrics = [metrics,]
         logging.info('Info: model scoring started...')
-        total_bat = 0
         num = 0
         tic = time.time()
 
@@ -131,8 +123,6 @@ class Scorer(object):
                     self.filtered_data[num + i]["probability"] = p[1]
                     self.filtered_data[num + i]["class"] = a
                     self.output_handle.write("%s\n" % ",".join([str(self.filtered_data[num + i][col]) for col in self.header]))
-            # for m in metrics:
-            #     mod.update_metric(m, batch.label)
             num += c.int("batch_size")
             if 0 < c.int("limit") <= num:
                 total_bat = time.time() - tic
