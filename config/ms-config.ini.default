@@ -32,6 +32,7 @@ file=output{val_subset}.csv
 log=scoring.log
 ; where all results should be stored:
 parent_dir=../results
+; sub folder for current evaluation:
 dir={timestamp}
 
 [debug]
