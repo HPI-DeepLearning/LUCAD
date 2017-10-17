@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     stageB = {
         "T": "simplenet-non-augmented/leakyrelu_with_s10_val{val_subset}",
-        "U": "v2_downsampledA/leakyrelu_with_s10_val",
+        "U": "v2_downsampledA/leakyrelu_with_s10_val{val_subset}",
         "V": "v2_xyD/leakyrelu_with_s10_val{val_subset}",
         "W": "leakyrelunet-v2_xyC/leakyrelu_with_s10_val{val_subset}",
         "X": "v2_xyE/leakyrelu_with_s10_val{val_subset}",
