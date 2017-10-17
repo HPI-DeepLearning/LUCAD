@@ -146,6 +146,7 @@ class Scorer(object):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='score a model on a dataset')
+    parser.add_argument('--config', type=str, nargs="+", default=(os.path.join(os.getcwd(), "config", "ms-config.ini"),))
     parser.add_argument('--gpus', type=str, default=None)
     parser.add_argument('--batch-size', type=int, default=None)
     parser.add_argument('--val-subsets', type=str, default=None)
@@ -156,18 +157,19 @@ if __name__ == '__main__':
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
 
-    c = LUCADConfig(args = args)
+    for config_path in args.config:
+        c = LUCADConfig(args=args, config_path=config_path)
 
-    path = get_dir()
-    if not os.path.exists(path):
-        os.makedirs(path)
+        path = get_dir()
+        if not os.path.exists(path):
+            os.makedirs(path)
 
-    if c.str("log") != "":
-        log_file = os.path.join(path, c.str("log"))
-        handler = logging.FileHandler(log_file, mode='w')
-        handler.setFormatter(logging.Formatter(logging.BASIC_FORMAT))
-        logger.addHandler(handler)
+        if c.str("log") != "":
+            log_file = os.path.join(path, c.str("log"))
+            handler = logging.FileHandler(log_file, mode='w')
+            handler.setFormatter(logging.Formatter(logging.BASIC_FORMAT))
+            logger.addHandler(handler)
 
-    scorer = Scorer()
-    scorer.score_all()
-    c.write(os.path.join(path, "ms-config.ini"))
+        scorer = Scorer()
+        scorer.score_all()
+        c.write(os.path.join(path, "ms-config.ini"))

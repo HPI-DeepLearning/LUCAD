@@ -19,8 +19,10 @@ class LUCADConfig(object):
                 sections.append(section)
         if len(sections) == 1:
             return sections[0]
+        elif len(sections) == 0:
+            raise RuntimeError("Auto section detection failed: No section contains the value '%s'" % value)
         else:
-            raise RuntimeError("Auto section detection failed.")
+            raise RuntimeError("Auto section detection failed: Multiple sections contain '%s'" % value)
 
     def str(self, value, section=None):
         if section is None:
