@@ -21,12 +21,12 @@ fi
 
 OUTPUT_FOLDER="$1"
 
-SCRIPT="$(readlink -f "$0")"
-SCRIPT_DIR="$(dirname ${SCRIPT})"
-GIT_ROOT="$(readlink -f ${SCRIPT_DIR})"
+SCRIPT=$(readlink -f "$0")
+SCRIPT_DIR=$(dirname "${SCRIPT}")
+GIT_ROOT=$(readlink -f "${SCRIPT_DIR}")
 
 while [ ! -f "$GIT_ROOT/README.md" ]; do
-    GIT_ROOT="$(readlink -f ${GIT_ROOT}/..)"
+    GIT_ROOT=$(readlink -f "${GIT_ROOT}/..")
 done
 
 EVALUATION_SCRIPT_PATH="evaluation/noduleCADEvaluationLUNA16.py"
@@ -43,7 +43,7 @@ ${CONCAT_SCRIPT} "${OUTPUT_FOLDER}" "concat.csv"
 
 RESULTS_FILE="${OUTPUT_FOLDER}/concat.csv"
 
-NUM_LINES="$(wc -l ${RESULTS_FILE})"
+NUM_LINES=$(wc -l "${RESULTS_FILE}")
 
 if [[ "${NUM_LINES}" == "754976 *" ]]; then
     echo "the result file ${RESULTS_FILE} has a wrong number of lines, maybe some output files are missing?"
