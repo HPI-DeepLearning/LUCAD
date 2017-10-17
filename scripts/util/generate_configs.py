@@ -3,19 +3,19 @@ import ConfigParser
 
 
 def set_model_values(template, path, weight, index):
-    template.set("models", "model%d" % index, str(path))
+    template.set("models", "model%d" % index, os.path.join("../runs", str(path)))
     template.set("models", "weight%d" % index, str(weight))
-    template.set("models", "epoch%d" % index, "AUTO")
+    template.set("models", "epoch%d" % index, "LAST")
 
 
 if __name__ == "__main__":
     prefixes = {
-        "A": "leakyrelunet-v2_dice_memmap_shuffled/leakyrelu_with_s10_val",
-        "B": "simplenet-non-augmented/leakyrelu_with_s10_val",
-        "C": "simplenet-v2_dice_memmap_shuffled/test-val",
-        "D": "v2_downsampledC/leakyrelu_with_s10_val",
-        "E": "leakyrelunet-v2_kokA/leakyrelu_with_s10-val",
-        "F": "leakyrelunet-v2_xyC/leakyrelu_with_s10_val",
+        "A": "leakyrelunet-v2_dice_memmap_shuffled/leakyrelu_with_s10_val{val_subset}",
+        "B": "simplenet-non-augmented/leakyrelu_with_s10_val{val_subset}",
+        "C": "simplenet-v2_dice_memmap_shuffled/test-val{val_subset}",
+        "D": "v2_downsampledC/leakyrelu_with_s10_val{val_subset}",
+        "E": "leakyrelunet-v2_kokA/leakyrelu_with_s10-val{val_subset}",
+        "F": "leakyrelunet-v2_xyC/leakyrelu_with_s10_val{val_subset}",
     }
 
     weights = [(1.0, 1.0), (3.0, 7.0)]

@@ -18,12 +18,13 @@ from util.config_init import LUCADConfig
 cls_labels = ['negative', 'positive']
 
 
-def get_dir():
+def get_initial_dir():
     return os.path.join(c.str("parent_dir"), c.str("dir").format(timestamp=helper.now()))
 
 
 class Scorer(object):
-    def __init__(self):
+    def __init__(self, path):
+        self.path = path
         self.loaders = []
         self.weights = []
         self.epochs = []
@@ -52,10 +53,10 @@ class Scorer(object):
 
     def setup_output(self, subset):
         if c.str("file") != "":
-            output_file = os.path.join(get_dir(), c.str("file").format(val_subset=subset))
+            output_file = os.path.join(self.path(), c.str("file").format(val_subset=subset))
             self.write_output = True
-            if not os.path.exists(get_dir()):
-                os.makedirs(get_dir())
+            if not os.path.exists(self.path()):
+                os.makedirs(self.path())
             elif os.path.isfile(output_file) and not c.bool("overwrite"):
                 logging.error("Not overwriting file without --overwrite.")
                 return (0.0,)
@@ -160,7 +161,7 @@ if __name__ == '__main__':
     for config_path in args.config:
         c = LUCADConfig(args=args, config_path=config_path)
 
-        path = get_dir()
+        path = get_initial_dir()
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -170,6 +171,6 @@ if __name__ == '__main__':
             handler.setFormatter(logging.Formatter(logging.BASIC_FORMAT))
             logger.addHandler(handler)
 
-        scorer = Scorer()
+        scorer = Scorer(path)
         scorer.score_all()
         c.write(os.path.join(path, "ms-config.ini"))

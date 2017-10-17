@@ -38,7 +38,7 @@ class RunLoader(object):
 
         self.epochs = filter(lambda x: x.startswith(self.base_prefix) and ".params" in x, os.listdir(self.directory))
         self.epochs = [e.replace("%s-" % self.base_prefix, "") for e in self.epochs]
-        self.epochs = [int(e.replace(".params", "").replace("%s-" % self.base_prefix, "")) for e in self.epochs]
+        self.epochs = [int(e.replace(".params", "")) for e in self.epochs]
 
         if len(self.epochs) == 0:
             self.valid = False
@@ -80,6 +80,7 @@ class RunLoader(object):
         self.check_validity()
         if epoch == "LAST":
             epoch = max(self.epochs)
+        assert isinstance(epoch, int), "%s not an int" % str(epoch)
         return mx.model.load_checkpoint(self.prefix, epoch) + (epoch,)
 
 
