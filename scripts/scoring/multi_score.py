@@ -158,6 +158,8 @@ if __name__ == '__main__':
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
 
+    prev_handler = None
+
     for config_path in args.config:
         c = LUCADConfig(args=args, config_path=config_path)
 
@@ -169,7 +171,10 @@ if __name__ == '__main__':
             log_file = os.path.join(path, c.str("log"))
             handler = logging.FileHandler(log_file, mode='w')
             handler.setFormatter(logging.Formatter(logging.BASIC_FORMAT))
+            if prev_handler is not None:
+                logger.removeHandler(prev_handler)
             logger.addHandler(handler)
+            prev_handler = handler
 
         scorer = Scorer(path)
         scorer.score_all()

@@ -9,44 +9,64 @@ def set_model_values(template, path, weight, index):
 
 
 if __name__ == "__main__":
-    prefixes = {
-        "A": "leakyrelunet-v2_dice_memmap_shuffled/leakyrelu_with_s10_val{val_subset}",
-        "B": "simplenet-non-augmented/leakyrelu_with_s10_val{val_subset}",
-        "C": "simplenet-v2_dice_memmap_shuffled/test-val{val_subset}",
-        "D": "v2_downsampledC/leakyrelu_with_s10_val{val_subset}",
-        "E": "leakyrelunet-v2_kokA/leakyrelu_with_s10-val{val_subset}",
-        "F": "leakyrelunet-v2_xyC/leakyrelu_with_s10_val{val_subset}",
+    FOLDER_FORMAT = "2017-10-17 %s"
+    FILE_FORMAT = "generated_config_%03d_%s.ini"
+
+    stageA = {
+        "A": "v2_downsampledC/leakyrelu_with_s10_val{val_subset}",
+        "B": "leakyrelunet-v2_dice_memmap_shuffled/leakyrelu_with_s10_val{val_subset}",
+        "C": "leakyrelunet-v2_kokA/leakyrelu_with_s10-val{val_subset}",
     }
 
-    weights = [(1.0, 1.0), (3.0, 7.0)]
+    stageB = {
+        "T": "simplenet-non-augmented/leakyrelu_with_s10_val{val_subset}",
+        "U": "v2_downsampledA/leakyrelu_with_s10_val",
+        "V": "v2_xyD/leakyrelu_with_s10_val{val_subset}",
+        "W": "leakyrelunet-v2_xyC/leakyrelu_with_s10_val{val_subset}",
+        "X": "v2_xyE/leakyrelu_with_s10_val{val_subset}",
+        "Y": "leakyrelunet-v2_fonova7/leakyrelu_with_s10_val{val_subset}",
+        "Z": "v2_fonova7_high_res/leakyrelu_with_s10_val{val_subset}",
+    }
 
     i = 0
 
-    for p in prefixes:
+    WEIGHTS = [(7.0, 3.0), (1.0, 1.0), (3.0, 7.0)]
+
+    for p in stageA:
         key = p
 
         parser = ConfigParser.SafeConfigParser()
         parser.read(os.path.join("config", "ms-config.ini.default"))
 
-        set_model_values(parser, prefixes[p], 1.0, 0)
-        parser.set("output", "dir", "{timestamp} %s" % key)
+        set_model_values(parser, stageA[p], 1.0, 0)
+        parser.set("output", "dir", FOLDER_FORMAT % key)
 
-        parser.write(open(os.path.join("config", "generated_config_%d_%s.ini" % (i, key)), "w"))
+        parser.write(open(os.path.join("config", FILE_FORMAT % (i, key)), "w"))
         i += 1
 
-    for p1 in prefixes:
-        for p2 in prefixes:
-            if p1 == p2:
-                continue
-            for w1, w2 in weights:
+    for p in stageB:
+        key = p
+
+        parser = ConfigParser.SafeConfigParser()
+        parser.read(os.path.join("config", "ms-config.ini.default"))
+
+        set_model_values(parser, stageB[p], 1.0, 0)
+        parser.set("output", "dir", FOLDER_FORMAT % key)
+
+        parser.write(open(os.path.join("config", FILE_FORMAT % (i, key)), "w"))
+        i += 1
+
+    for p1 in stageA:
+        for p2 in stageB:
+            for w1, w2 in WEIGHTS:
                 key = "%d-%s+%d-%s" % (round(w1), p1, round(w2), p2)
 
                 parser = ConfigParser.SafeConfigParser()
                 parser.read(os.path.join("config", "ms-config.ini.default"))
 
-                set_model_values(parser, prefixes[p1], w1, 0)
-                set_model_values(parser, prefixes[p2], w2, 0)
-                parser.set("output", "dir", "{timestamp} %s" % key)
+                set_model_values(parser, stageA[p1], w1, 0)
+                set_model_values(parser, stageB[p2], w2, 0)
+                parser.set("output", "dir", FOLDER_FORMAT % key)
 
-                parser.write(open(os.path.join("config", "generated_config_%d_%s.ini" % (i, key)), "w"))
+                parser.write(open(os.path.join("config", FILE_FORMAT % (i, key)), "w"))
                 i += 1
