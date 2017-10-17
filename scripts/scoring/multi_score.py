@@ -61,7 +61,7 @@ class Scorer(object):
                 logging.error("Not overwriting file without --overwrite.")
                 return (0.0,)
             self.output_handle = open(output_file, "w")
-            self.header = ["seriesuid", "coordX", "coordY", "coordZ", "probability", "class"]
+            self.header = ["seriesuid", "coordX", "coordY", "coordZ", "probability", "class", "prediction"]
             self.output_handle.write("%s\n" % ",".join(self.header))
             # only in this case we need to read the candidates csv
             if not os.path.isdir(c.str("original_data_root")):
@@ -122,7 +122,7 @@ class Scorer(object):
                         break
                     assert current_label == int(self.filtered_data[num + i]["class"]), "original and processed labels not equal"
                     self.filtered_data[num + i]["probability"] = p[1]
-                    self.filtered_data[num + i]["class"] = a
+                    self.filtered_data[num + i]["prediction"] = a
                     self.output_handle.write("%s\n" % ",".join([str(self.filtered_data[num + i][col]) for col in self.header]))
             num += c.int("batch_size")
             if 0 < c.int("limit") <= num:
