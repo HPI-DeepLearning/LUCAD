@@ -53,10 +53,10 @@ class Scorer(object):
 
     def setup_output(self, subset):
         if c.str("file") != "":
-            output_file = os.path.join(self.path(), c.str("file").format(val_subset=subset))
+            output_file = os.path.join(self.path, c.str("file").format(val_subset=subset))
             self.write_output = True
-            if not os.path.exists(self.path()):
-                os.makedirs(self.path())
+            if not os.path.exists(self.path):
+                os.makedirs(self.path)
             elif os.path.isfile(output_file) and not c.bool("overwrite"):
                 logging.error("Not overwriting file without --overwrite.")
                 return (0.0,)
