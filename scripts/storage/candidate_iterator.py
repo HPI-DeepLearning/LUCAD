@@ -172,7 +172,7 @@ class InnerIter(mx.io.DataIter):
                     break
 
             p, i = self.idx[self.cursor]
-            print p, i
+            # print p, i
 
             data[current_batch_size] = self.data_files[p][i]
             labels[current_batch_size] = self.label_files[p][i]

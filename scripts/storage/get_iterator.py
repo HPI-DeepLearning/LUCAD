@@ -29,7 +29,7 @@ def main(args):
     logging.info("Data shape: %s" % str(data_iter.provide_data[0].shape))
     logging.info("Number of batches: ~%d" % (data_iter.total_size() / batch_size))
 
-    measure_chunks = 10
+    measure_chunks = 1000
 
     processed_samples = 0
 
