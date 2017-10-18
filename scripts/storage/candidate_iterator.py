@@ -109,7 +109,7 @@ class InnerIter(mx.io.DataIter):
             else:
                 info_files_normal[subset] = info_file_data
 
-        self.batch_shape = tuple([self.batch_size] + info_file_data["shape"][2:])
+        self.batch_shape = tuple([self.batch_size] + [1] + info_file_data["shape"][2:])
 
         if len(info_files_normal) == 0:
             info_files_normal = info_files_tianchi
@@ -120,6 +120,7 @@ class InnerIter(mx.io.DataIter):
         logging.debug("Needs shuffling: %s" % self.needs_shuffling)
 
         if self.needs_shuffling:
+            logging.warning("The dataset was not shuffled while preparation so reading the shuffled version will be extremely slow!")
             self.idx = RandomIndex([len(labels) for labels in self.label_files])
         else:
             self.idx = SequentialIndex([len(labels) for labels in self.label_files])
