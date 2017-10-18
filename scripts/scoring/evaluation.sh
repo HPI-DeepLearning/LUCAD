@@ -45,11 +45,11 @@ RESULTS_FILE="${OUTPUT_FOLDER}/concat.csv"
 
 NUM_LINES=$(wc -l "${RESULTS_FILE}")
 
-if [[ "${NUM_LINES}" == "754976 *" ]]; then
-    echo "the result file ${RESULTS_FILE} has a wrong number of lines, maybe some output files are missing?"
-    exit 1
-else
+if [[ "${NUM_LINES:0:6}" == "754976" ]]; then
     echo "Concatenation finished: result file ${RESULTS_FILE} has correct number of lines."
+else
+    echo "the result file ${RESULTS_FILE} has a wrong number of lines (${NUM_LINES:0:6} instead of 754976), maybe some output files are missing?"
+    exit 1
 fi
 
 ANN_ROOT="${GIT_ROOT}/evaluation/annotations"
