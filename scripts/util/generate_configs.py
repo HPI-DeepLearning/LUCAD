@@ -65,7 +65,7 @@ if __name__ == "__main__":
                 parser.read(os.path.join("config", "ms-config.ini.default"))
 
                 set_model_values(parser, stageA[p1], w1, 0)
-                set_model_values(parser, stageB[p2], w2, 0)
+                set_model_values(parser, stageB[p2], w2, 1)
                 parser.set("output", "dir", FOLDER_FORMAT % key)
 
                 parser.write(open(os.path.join("config", FILE_FORMAT % (i, key)), "w"))
