@@ -16,12 +16,12 @@ function check_file() {
 
 function copy_header() {
     check_file "${1}"
-    head -n 1 ${1} > ${2}
+    head -n 1 "${1}" > "${2}"
 }
 
 function copy_body() {
     check_file "${1}"
-    tail -n +2 ${1} >> ${2}
+    tail -n +2 "${1}" >> "${2}"
 }
 
 

@@ -1,0 +1,40 @@
+; possible placeholders in paths:
+; {val_subset}      - number of validation subset
+; {timestamp}       - current timestamp
+
+[models]
+model0=path to model{val_subset}
+weight0=1.0
+epoch0=LAST
+; model[n]=path to n-th model
+; weight[n]=weight of n-th model
+; epoch[n]=can be explicit number or "LAST"
+
+[mxnet]
+; make empty to use CPU:
+gpus=0
+batch_size=64
+image_shape=1,36,36,36
+
+[dataset]
+; path to original_data_root:
+original_data_root=../data/original
+; path to prepared validation data root:
+data_root=../data/v2_none
+; for high resolution:
+; data_root=../data/v2_validation_high_res
+; comma-separated list or AUTO (uses all available subsets):
+val_subsets=AUTO
+
+[output]
+file=output{val_subset}.csv
+; make empty if no log is desired:
+log=scoring.log
+; where all results should be stored:
+parent_dir=../results
+; sub folder for current evaluation:
+dir={timestamp}
+
+[debug]
+overwrite=False
+limit=0

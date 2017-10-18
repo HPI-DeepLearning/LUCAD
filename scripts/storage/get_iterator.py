@@ -4,7 +4,6 @@ import logging
 from util import helper
 from candidate_iterator import CandidateIter
 from distributed_iterator import DistributedIter
-from mxnet.io import PrefetchingIter
 
 
 def get_iterator(root, subsets, batch_size, chunk_size = 100, shuffle = False, prefetch = False, data_name = 'data', label_name = 'softmax_label'):
@@ -32,6 +31,8 @@ def main(args):
 
     measure_chunks = 10
 
+    processed_samples = 0
+
     i = 0
     # lb = helper.SimpleLoadingBar("Loading samples", data_iter.total_size())
     for batch in data_iter:
@@ -46,8 +47,9 @@ def main(args):
         assert len(batch.data[0]) == batch_size
         assert len(batch.label[0]) == batch_size
         i += 1
+        processed_samples += batch.label[0].shape[0] - batch.pad
     logging.info("Total time: %.2f s" % (time.time() - start))
-    logging.info("Finished!")
+    logging.info("Finished processing %d samples!" % processed_samples)
 
 
 if __name__ == "__main__":

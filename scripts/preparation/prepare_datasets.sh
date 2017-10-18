@@ -3,9 +3,9 @@
 function usage_and_exit() {
     echo "usage: ./prepare_datasets.sh data_root configuration [source]"
     echo "    data_root     - path to data directories should contain 'original' folder with original data"
-    echo "    configuration - [test, normal, fonova7, fonova7_high_res, fonova25_high_res, fonova100,"
+    echo "    configuration - [normal, fonova7, fonova7_high_res, fonova25_high_res, fonova100,"
     echo "                     fonova100_high_res, kokA, kokB, xyA, xyB, xyC, xyD, xyE, downsampledA,"
-    echo "                     downsampledB, downsampledC]"
+    echo "                     downsampledB, downsampledC, validation, validation_high_res]"
     echo "    source        - [luna, tianchi], default: luna"
     exit 1
 }
@@ -43,8 +43,12 @@ fi
 ORIGINAL_DATA="${DATA_ROOT}/${BASE_DATA}"
 
 OPTIONS=""
-if [ "${CONFIG}" == "test" ]; then
+if [ "${CONFIG}" == "validation" ]; then
     OPTIONS="--storage memmap --augmentation none"
+fi
+
+if [ "${CONFIG}" == "validation_high_res" ]; then
+    OPTIONS="--storage memmap --augmentation none --voxelsize 0.5556"
 fi
 
 if [ "${CONFIG}" == "normal" ]; then

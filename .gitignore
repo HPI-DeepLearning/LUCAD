@@ -163,3 +163,5 @@ bld
 target
 
 bin/im2rec
+
+config/*.ini
