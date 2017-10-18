@@ -152,13 +152,13 @@ class InnerIter(mx.io.DataIter):
 
     @property
     def provide_data(self):
-        data_description = mx.io.DataDesc(self.data_name, self.batch_shape, helper.DTYPE)
+        data_description = mx.io.DataDesc(self.data_name, self.batch_shape, "f4")
         data_description.layout = "NCDHW"
         return [data_description]
 
     @property
     def provide_label(self):
-        label_description = mx.io.DataDesc(self.label_name, (self.batch_size, ), helper.DTYPE)
+        label_description = mx.io.DataDesc(self.label_name, (self.batch_size, ), "f4")
         return [label_description]
 
     def next(self):
@@ -173,7 +173,6 @@ class InnerIter(mx.io.DataIter):
                     break
 
             p, i = self.idx[self.cursor]
-            # print p, i
 
             data[current_batch_size] = self.data_files[p][i]
             labels[current_batch_size] = self.label_files[p][i]
@@ -181,4 +180,4 @@ class InnerIter(mx.io.DataIter):
             current_batch_size += 1
 
         pad = self.batch_size - current_batch_size
-        return mx.io.DataBatch(data=[mx.io.array(data)], label=[mx.io.array(labels)], pad=pad, index=None)
+        return mx.io.DataBatch(data=[mx.io.array(data, dtype="f4")], label=[mx.io.array(labels, dtype="f4")], pad=pad, index=None)

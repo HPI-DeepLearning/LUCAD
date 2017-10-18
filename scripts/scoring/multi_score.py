@@ -59,7 +59,7 @@ class Scorer(object):
                 os.makedirs(self.path)
             elif os.path.isfile(output_file) and not c.bool("overwrite"):
                 logging.error("Not overwriting file without --overwrite.")
-                return (0.0,)
+                return False
             self.output_handle = open(output_file, "w")
             self.header = ["seriesuid", "coordX", "coordY", "coordZ", "probability", "class", "prediction"]
             self.output_handle.write("%s\n" % ",".join(self.header))
@@ -71,6 +71,7 @@ class Scorer(object):
             for s in self.seriesuids:
                 self.filtered_data += candidates[s]
             logging.debug("Number of Samples: %d" % len(self.filtered_data))
+        return True
 
     def load_models(self, subset):
         # create modules
@@ -95,7 +96,8 @@ class Scorer(object):
         self.seriesuids = self.val_iter.get_info()["files"]
         logging.debug("SeriesUIDs: %s" % self.seriesuids)
 
-        self.setup_output(subset)
+        if not self.setup_output(subset):
+            return 0.0,
         self.load_models(subset)
 
         logging.info('Info: model scoring started...')

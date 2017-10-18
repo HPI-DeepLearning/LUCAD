@@ -75,4 +75,7 @@ class LUCADConfig(object):
 
         self.config = ConfigParser.SafeConfigParser()
         logging.info("Reading config: %s" % self.config_path)
-        self.config.read(self.config_path)
+        if os.path.isfile(self.config_path):
+            self.config.read(self.config_path)
+        else:
+            raise RuntimeError("Could not find config file %s" % self.config_path)
