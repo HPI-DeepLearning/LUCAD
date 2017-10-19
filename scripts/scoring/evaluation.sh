@@ -68,21 +68,21 @@ for output_folder in "$@"; do
         echo "'Rscript' not found, not making graphs."
     fi
 
-    #ANN_ROOT="${git_root}/evaluation/annotations"
-    #
-    #mkdir -p "${output_folder}/CADEvaluation"
-    #
-    #echo "Starting evaluation, this can take a while..."
-    #
-    #python ${evaluation_script} "${ANN_ROOT}/annotations.csv" "${ANN_ROOT}/annotations_excluded.csv" "${ANN_ROOT}/seriesuids.csv" "${results_file}" "${output_folder}/CADEvaluation" &> "${output_folder}/CADEvaluation/evaluation.log"
-    #
-    #STATUS=$?
-    #if [ ${STATUS} -ne 0 ]; then
-    #    echo "error with evaluation script command:"
-    #    echo "   python ${evaluation_script} \"${ANN_ROOT}/annotations.csv\" \"${ANN_ROOT}/annotations_excluded.csv\" \"${ANN_ROOT}/seriesuids.csv\" \"${output_folder}/concat.csv\" \"${output_folder}/CADEvaluation\""
-    #    echo "check log file: ${output_folder}/CADEvaluation/evaluation.log"
-    #    exit 1
-    #fi
-    #
+    ANN_ROOT="${git_root}/evaluation/annotations"
+
+    mkdir -p "${output_folder}/CADEvaluation"
+
+    echo "Starting evaluation, this can take a while..."
+
+    python ${evaluation_script} "${ANN_ROOT}/annotations.csv" "${ANN_ROOT}/annotations_excluded.csv" "${ANN_ROOT}/seriesuids.csv" "${results_file}" "${output_folder}/CADEvaluation" &> "${output_folder}/CADEvaluation/evaluation.log"
+
+    STATUS=$?
+    if [ ${STATUS} -ne 0 ]; then
+        echo "error with evaluation script command:"
+        echo "   python ${evaluation_script} \"${ANN_ROOT}/annotations.csv\" \"${ANN_ROOT}/annotations_excluded.csv\" \"${ANN_ROOT}/seriesuids.csv\" \"${output_folder}/concat.csv\" \"${output_folder}/CADEvaluation\""
+        echo "check log file: ${output_folder}/CADEvaluation/evaluation.log"
+        exit 1
+    fi
+
     echo "Finished! Results can be found in ${output_folder}/CADEvaluation."
 done
