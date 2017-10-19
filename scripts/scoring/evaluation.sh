@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
+trap 'exit 130' INT
+
 function usage_and_exit() {
-    echo "usage: ./evaluation.sh output_folder"
+    echo "usage: ./evaluation.sh output_folder [output_folder...]"
     exit 1
 }
 
@@ -15,57 +17,72 @@ function check_script() {
     fi
 }
 
-if [ "$#" -ne 1 ]; then
-    usage_and_exit
-fi
+function get_script() {
+    local result=${2}
+    local path="${git_root}/${1}"
+    local abs_path=$(realpath "${path}")
+    check_script "${abs_path}"
+    eval ${result}="'${abs_path}'"
+}
 
-OUTPUT_FOLDER="$1"
+script=$(readlink -f "$0")
+script_dir=$(dirname "${script}")
+git_root=$(readlink -f "${script_dir}")
 
-SCRIPT=$(readlink -f "$0")
-SCRIPT_DIR=$(dirname "${SCRIPT}")
-GIT_ROOT=$(readlink -f "${SCRIPT_DIR}")
-
-while [ ! -f "$GIT_ROOT/README.md" ]; do
-    GIT_ROOT=$(readlink -f "${GIT_ROOT}/..")
+while [ ! -f "${git_root}/README.md" ]; do
+    git_root=$(readlink -f "${git_root}/..")
 done
 
-EVALUATION_SCRIPT_PATH="evaluation/noduleCADEvaluationLUNA16.py"
-EVALUATION_SCRIPT="${GIT_ROOT}/${EVALUATION_SCRIPT_PATH}"
+get_script "evaluation/noduleCADEvaluationLUNA16.py" evaluation_script
+get_script "scripts/scoring/concat.sh" concat_script
+get_script "scripts/scoring/make_graphs.R" graph_script
 
-check_script "${EVALUATION_SCRIPT}"
+for output_folder in "$@"; do
+    if [ ! -d "${output_folder}" ]; then
+        echo "${output_folder} is not a directory."
+        usage_and_exit
+    fi
+done
 
-CONCAT_SCRIPT_PATH="scripts/scoring/concat.sh"
-CONCAT_SCRIPT="${GIT_ROOT}/${CONCAT_SCRIPT_PATH}"
+for output_folder in "$@"; do
+    echo "Processing ${output_folder}..."
 
-check_script "${CONCAT_SCRIPT}"
+    ${concat_script} "${output_folder}" "concat.csv"
 
-${CONCAT_SCRIPT} "${OUTPUT_FOLDER}" "concat.csv"
+    results_file="${output_folder}/concat.csv"
 
-RESULTS_FILE="${OUTPUT_FOLDER}/concat.csv"
+    num_lines=$(wc -l "${results_file}")
 
-NUM_LINES=$(wc -l "${RESULTS_FILE}")
+    if [[ "${num_lines:0:6}" == "754976" ]]; then
+        echo "Concatenation finished: result file ${results_file} has correct number of lines."
+    else
+        echo "the result file ${results_file} has a wrong number of lines (${num_lines:0:6} instead of 754976), maybe some output files are missing?"
+        exit 1
+    fi
 
-if [[ "${NUM_LINES:0:6}" == "754976" ]]; then
-    echo "Concatenation finished: result file ${RESULTS_FILE} has correct number of lines."
-else
-    echo "the result file ${RESULTS_FILE} has a wrong number of lines (${NUM_LINES:0:6} instead of 754976), maybe some output files are missing?"
-    exit 1
-fi
+    if command -v Rscript >/dev/null 2>&1; then
+        echo "Creating graphs, this can take a while..."
+        ( cd "${output_folder}"; Rscript "${graph_script}" )
+        echo "Graphs created."
+    else
+        echo "'Rscript' not found, not making graphs."
+    fi
 
-ANN_ROOT="${GIT_ROOT}/evaluation/annotations"
-
-mkdir -p "${OUTPUT_FOLDER}/CADEvaluation"
-
-echo "Starting evaluation, this can take a while..."
-
-python ${EVALUATION_SCRIPT} "${ANN_ROOT}/annotations.csv" "${ANN_ROOT}/annotations_excluded.csv" "${ANN_ROOT}/seriesuids.csv" "${RESULTS_FILE}" "${OUTPUT_FOLDER}/CADEvaluation" &> "${OUTPUT_FOLDER}/CADEvaluation/evaluation.log"
-
-STATUS=$?
-if [ ${STATUS} -ne 0 ]; then
-    echo "error with evaluation script command:"
-    echo "   python ${EVALUATION_SCRIPT} \"${ANN_ROOT}/annotations.csv\" \"${ANN_ROOT}/annotations_excluded.csv\" \"${ANN_ROOT}/seriesuids.csv\" \"${OUTPUT_FOLDER}/concat.csv\" \"${OUTPUT_FOLDER}/CADEvaluation\""
-    echo "check log file: ${OUTPUT_FOLDER}/CADEvaluation/evaluation.log"
-    exit 1
-fi
-
-echo "Finished! Results can be found in ${OUTPUT_FOLDER}/CADEvaluation."
+    #ANN_ROOT="${git_root}/evaluation/annotations"
+    #
+    #mkdir -p "${output_folder}/CADEvaluation"
+    #
+    #echo "Starting evaluation, this can take a while..."
+    #
+    #python ${evaluation_script} "${ANN_ROOT}/annotations.csv" "${ANN_ROOT}/annotations_excluded.csv" "${ANN_ROOT}/seriesuids.csv" "${results_file}" "${output_folder}/CADEvaluation" &> "${output_folder}/CADEvaluation/evaluation.log"
+    #
+    #STATUS=$?
+    #if [ ${STATUS} -ne 0 ]; then
+    #    echo "error with evaluation script command:"
+    #    echo "   python ${evaluation_script} \"${ANN_ROOT}/annotations.csv\" \"${ANN_ROOT}/annotations_excluded.csv\" \"${ANN_ROOT}/seriesuids.csv\" \"${output_folder}/concat.csv\" \"${output_folder}/CADEvaluation\""
+    #    echo "check log file: ${output_folder}/CADEvaluation/evaluation.log"
+    #    exit 1
+    #fi
+    #
+    echo "Finished! Results can be found in ${output_folder}/CADEvaluation."
+done
