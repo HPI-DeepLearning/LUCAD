@@ -91,7 +91,7 @@ def main(args):
     for r in args.result:
         results.append(Result(r))
 
-    out_csv.writerow(COLUMNS)
+    out_csv.writerow([col.replace("[", "_").replace("]", "_").replace(" ", "_") for col in COLUMNS])
     for r in results:
         r.write_to(out_csv, COLUMNS)
 

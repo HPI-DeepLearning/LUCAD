@@ -32,7 +32,6 @@ def main(args):
 
     out_prob_index = len(output_header)
     output_header.extend(["probability_%s" % n for n in names])
-
     other_prob_cols = [
         # [key, accum_function, filter_function]
         # ["avg_stage_A", avg, lambda col_name: any(c in col_name for c in ["A", "B", "C"])],
@@ -44,10 +43,32 @@ def main(args):
         # ["min_stage_A", min, lambda col_name: any(c in col_name for c in ["A", "B", "C"])],
         # ["min_stage_B", min, lambda col_name: any(c in col_name for c in ["T", "U", "V", "W", "X", "Y", "Z"])],
         # ["min_all", min, lambda _: True],
-        ["avg_stage_A+", avg, lambda col_name: any(c in col_name for c in ["A", "B", "C", "D"])],
-        ["max_stage_A+", max, lambda col_name: any(c in col_name for c in ["A", "B", "C", "D"])],
-        ["min_stage_A+", min, lambda col_name: any(c in col_name for c in ["A", "B", "C", "D"])],
+        # ["avg_stage_A+", avg, lambda col_name: any(c in col_name for c in ["A", "B", "C", "D"])],
+        # ["max_stage_A+", max, lambda col_name: any(c in col_name for c in ["A", "B", "C", "D"])],
+        # ["min_stage_A+", min, lambda col_name: any(c in col_name for c in ["A", "B", "C", "D"])],
+        ["avg_mix_ACTVWX", avg, lambda col_name: any(c in col_name for c in ["A", "C", "T", "V", "W", "X"])],
+        ["min_mix_ACTVWX", min, lambda col_name: any(c in col_name for c in ["A", "C", "T", "V", "W", "X"])],
+        ["max_mix_ACTVWX", max, lambda col_name: any(c in col_name for c in ["A", "C", "T", "V", "W", "X"])],
+        ["avg_mix_TVWX", avg, lambda col_name: any(c in col_name for c in ["T", "V", "W", "X"])],
+        ["min_mix_TVWX", min, lambda col_name: any(c in col_name for c in ["T", "V", "W", "X"])],
+        ["max_mix_TVWX", max, lambda col_name: any(c in col_name for c in ["T", "V", "W", "X"])],
+        ["avg_mix_AC", avg, lambda col_name: any(c in col_name for c in ["A", "C"])],
+        ["min_mix_AC", min, lambda col_name: any(c in col_name for c in ["A", "C"])],
+        ["max_mix_AC", max, lambda col_name: any(c in col_name for c in ["A", "C"])],
+        ["avg_mix_ACT", avg, lambda col_name: any(c in col_name for c in ["A", "C", "T"])],
+        ["min_mix_ACT", min, lambda col_name: any(c in col_name for c in ["A", "C", "T"])],
+        ["max_mix_ACT", max, lambda col_name: any(c in col_name for c in ["A", "C", "T"])],
+        ["avg_mix_ACV", avg, lambda col_name: any(c in col_name for c in ["A", "C", "V"])],
+        ["min_mix_ACV", min, lambda col_name: any(c in col_name for c in ["A", "C", "V"])],
+        ["max_mix_ACV", max, lambda col_name: any(c in col_name for c in ["A", "C", "V"])],
+        ["avg_mix_ACW", avg, lambda col_name: any(c in col_name for c in ["A", "C", "W"])],
+        ["min_mix_ACW", min, lambda col_name: any(c in col_name for c in ["A", "C", "W"])],
+        ["max_mix_ACW", max, lambda col_name: any(c in col_name for c in ["A", "C", "W"])],
+        ["avg_mix_ACX", avg, lambda col_name: any(c in col_name for c in ["A", "C", "X"])],
+        ["min_mix_ACX", min, lambda col_name: any(c in col_name for c in ["A", "C", "X"])],
+        ["max_mix_ACX", max, lambda col_name: any(c in col_name for c in ["A", "C", "X"])],
     ]
+
 
     other_prob_index = len(output_header)
     for key, _, _ in other_prob_cols:
